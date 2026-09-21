@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ASTERISK メンバー出欠</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Noto Sans JP",
+          sans-serif;
+        background: #f4f6fb;
+        color: #172033;
+        margin: 0;
+      }
+      main {
+        max-width: 980px;
+        margin: auto;
+        padding: 18px 12px 60px;
+      }
+      .box,
+      .card {
+        background: #fff;
+        border: 1px solid #dfe5ef;
+        border-radius: 16px;
+        padding: 14px;
+        margin: 10px 0;
+      }
+      .info {
+        background: #fff8dd;
+        border: 2px solid #f0c64d;
+      }
+      .btn {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-weight: 800;
+        cursor: pointer;
+        margin: 4px;
+      }
+      .primary {
+        background: #315be8;
+        color: #fff;
+      }
+      .yes {
+        background: #e9f8f1;
+      }
+      .wait {
+        background: #eef2ff;
+        color: #315be8;
+      }
+      .selected {
+        outline: 2px solid #315be8;
+      }
+      .full {
+        display: inline-block;
+        background: #fdecef;
+        color: #b84452;
+        font-weight: 900;
+        padding: 6px 10px;
+        border-radius: 9px;
+      }
+      .muted {
+        color: #70798b;
+        font-size: 13px;
+      }
+      .filters {
+        background: #fff;
+        border: 1px solid #dfe5ef;
+        border-radius: 16px;
+        margin: 10px 0;
+        overflow: hidden;
+      }
+      .filterHead,
+      .eventHead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 13px 14px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .filterBody {
+        padding: 0 12px 12px;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .chips button {
+        border: 1px solid #ccd4e2;
+        background: #fff;
+        border-radius: 999px;
+        padding: 8px 11px;
+        font-weight: 800;
+      }
+      .chips .on {
+        background: #315be8;
+        color: #fff;
+      }
+      .toolbar {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+      .event {
+        background: #fff;
+        border: 1px solid #dfe5ef;
+        border-radius: 14px;
+        margin: 8px 0;
+        overflow: hidden;
+      }
+      .eventHead {
+        padding: 12px;
+      }
+      .eventBody {
+        padding: 0 13px 13px;
+      }
+      .hidden {
+        display: none;
+      }
+      .meta {
+        display: grid;
+        gap: 6px;
+      }
+      .capacityInfo {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .capacityInfo span {
+        background: #eef2ff;
+        color: #294bb8;
+        font-weight: 900;
+        padding: 7px 10px;
+        border-radius: 9px;
+      }
+      .lockedMonth{margin:9px 0;background:#f1f3f6;color:#667085;font-weight:900;padding:10px;border-radius:10px;text-align:center}.joined {
+        margin-top: 8px;
+        background: #e8f7f1;
+        color: #167d59;
+        font-weight: 900;
+        padding: 9px;
+        border-radius: 10px;
+        text-align: center;
+      }
+      .answers {
+        margin-top: 12px;
+        padding: 10px;
+        background: #f7f9fc;
+        border: 1px solid #e3e8f1;
+        border-radius: 10px;
+      }
+      .answers summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 32px;
+        font-weight: 900;
+        cursor: pointer;
+        list-style: none;
+      }
+      .answers summary::-webkit-details-marker {
+        display: none;
+      }
+      .answers summary::after {
+        content: "＋";
+        color: #315ee7;
+        font-size: 22px;
+        line-height: 1;
+      }
+      .answers[open] summary {
+        margin-bottom: 4px;
+      }
+      .answers[open] summary::after {
+        content: "−";
+      }
+      .answer {
+        padding: 8px 0;
+        border-bottom: 1px solid #e3e8f1;
+      }
+      .answer:last-child {
+        border-bottom: 0;
+      }
+      .answerHead {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-weight: 800;
+      }
+      .answerStatus {
+        font-size: 12px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #e8eef8;
+        color: #31517b;
+      }
+      .genderBadge {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-weight: 900;
+      }
+      .genderBadge.male {
+        background: #e8f1ff;
+        color: #1769c2;
+      }
+      .genderBadge.female {
+        background: #ffecef;
+        color: #c7334d;
+      }
+      .answerComment {
+        margin-top: 3px;
+        color: #536273;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .answerEmpty {
+        color: #7b8794;
+        font-size: 13px;
+      }
+      .dateSearch {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 7px;
+        margin-top: 7px;
+      }
+      .dateSearch input {
+        margin: 0;
+      }
+      .calendarBtn {
+        display: block;
+        text-align: center;
+        margin: 9px 0;
+        background: #eef2ff;
+        color: #315be8;
+        border: 1px solid #ccd7f5;
+      }
+      .guide {
+        background: #fff;
+        border: 1px solid #dfe5ef;
+        border-radius: 14px;
+        margin: 9px 0;
+        overflow: hidden;
+      }
+      .guide summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px;
+        font-weight: 900;
+        cursor: pointer;
+        list-style: none;
+      }
+      .guide summary::-webkit-details-marker {
+        display: none;
+      }
+      .guide summary:after {
+        content: "＋";
+        font-size: 20px;
+        color: #315be8;
+      }
+      .guide[open] summary:after {
+        content: "−";
+      }
+      .guideBody {
+        padding: 0 14px 14px;
+        border-top: 1px solid #e6ebf3;
+      }
+      .guideBody p {
+        line-height: 1.65;
+      }
+      .guideBody ul {
+        padding-left: 20px;
+      }
+      .guideBody li {
+        margin: 7px 0;
+        line-height: 1.55;
+      }
+      textarea,
+      input,
+      select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 9px;
+        border: 1px solid #dfe5ef;
+        border-radius: 9px;
+        margin-top: 7px;
+      }
+      .level-list {
+        display: grid;
+        gap: 9px;
+        margin-top: 10px;
+      }
+      .level-row {
+        display: grid;
+        grid-template-columns: 58px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 13px;
+        border: 1px solid #dfe5ef;
+      }
+      .level-icon {
+        font-size: 25px;
+        text-align: center;
+      }
+      .level-text {
+        display: grid;
+        gap: 2px;
+      }
+      .level-text b {
+        font-size: 16px;
+      }
+      .level-text span {
+        font-weight: 800;
+        color: #243553;
+      }
+      .level-text small {
+        font-size: 13px;
+        color: #5d6878;
+      }
+      .level-male {
+        background: #eef6ff;
+        border-color: #bcd8f7;
+      }
+      .level-star {
+        background: #fff9df;
+        border-color: #f0d46b;
+      }
+      .level-mix {
+        background: linear-gradient(90deg, #fff9df, #fff0ef);
+        border-color: #edc88d;
+      }
+      .level-hana {
+        background: #fff0ef;
+        border-color: #efc0bc;
+      }
+      .level-sakura {
+        background: #fff2f7;
+        border-color: #efc8d9;
+      }
+      .level-beginner {
+        background: #eef9ff;
+        border-color: #b8dfef;
+      }
+      .level-important {
+        padding: 11px 12px;
+        border-radius: 11px;
+        background: #fff4e5;
+        border: 1px solid #f2c27b;
+        color: #8a4b00;
+        font-weight: 900;
+        line-height: 1.5;
+      }
+      .level-other {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .level-other span {
+        background: #f3f5f9;
+        border-radius: 999px;
+        padding: 7px 10px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      @media (max-width: 420px) {
+        .level-row {
+          grid-template-columns: 48px 1fr;
+        }
+        .level-icon {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>メンバー出欠</h1>
+      <section class="box info">
+        <b>📢 インフォメーション</b>
+        <p>
+          現在販売中のVSAPオリジナル製品を1着購入につき、参加無料チケット1枚プレゼントします！
+        </p>
+        <a
+          class="btn primary"
+          href="https://script.google.com/macros/s/AKfycbx-p8Pg8jiDOdY3V9tlZ7amhFX97ihsOo0_hQEa4zFprRyh0MWtaGVyHqlfA366GyHy/exec"
+          target="_blank"
+          rel="noopener noreferrer"
+          >🛒 商品を購入する</a
+        >
+      </section>
+      <details class="guide">
+        <summary>⭐ レベルについて</summary>
+        <div class="guideBody">
+          <div class="level-list">
+            <div class="level-row level-male">
+              <div class="level-icon">🚹️</div>
+              <div class="level-text">
+                <b>🚹️クラス</b><span>バレー歴4年以上</span
+                ><small>ブランク有りでも可</small>
+              </div>
+            </div>
+            <div class="level-row level-star">
+              <div class="level-icon">⭐️</div>
+              <div class="level-text">
+                <b>⭐️クラス</b><span>バレー歴5年以上</span
+                ><small>ブランク1年未満</small>
+              </div>
+            </div>
+            <div class="level-row level-mix">
+              <div class="level-icon">⭐️🌺</div>
+              <div class="level-text">
+                <b>⭐️🌺クラス</b><span>バレー歴3年以上</span
+                ><small>ブランク有りでもOK</small>
+              </div>
+            </div>
+            <div class="level-row level-hana">
+              <div class="level-icon">🌺</div>
+              <div class="level-text">
+                <b>🌺クラス</b><span>バレー歴3年推奨</span
+                ><small>ブランク有りでもOK</small>
+              </div>
+            </div>
+            <div class="level-row level-sakura">
+              <div class="level-icon">🌸</div>
+              <div class="level-text">
+                <b>🌸クラス</b><span>バレー歴1〜2年目安</span
+                ><small>ブランク有りでも全然OK</small>
+              </div>
+            </div>
+            <div class="level-important">
+              ⚠️ 公式戦同様のローテーションは必ず覚えてくること。
+            </div>
+            <div class="level-row level-beginner">
+              <div class="level-icon">💎</div>
+              <div class="level-text">
+                <b>初心者大歓迎コース</b><span>初心者の方はこちら</span
+                ><small>ブランク有りでも全然OK</small>
+              </div>
+            </div>
+            <div class="level-other">
+              <span>🏐 初心者コーチ回</span><span>✡️ 大会・交流戦</span
+              ><span>🌠 個人参加</span>
+            </div>
+          </div>
+        </div>
+      </details>
+      <details class="guide">
+        <summary>🏐 練習メニュー</summary>
+        <div class="guideBody">
+          <p>
+            準備 18:20 → パス 18:30 → 6人シート 18:40 → スパイク 18:45 → ゲーム
+            → 解散 21:00
+          </p>
+          <p>
+            💎はグルグルローテ、⭐・🌺・🌸はスイッチローテを基本とします。開催時間によって内容は調整します。
+          </p>
+        </div>
+      </details>
+      <details class="guide">
+        <summary>⚠️ 注意事項</summary>
+        <div class="guideBody">
+          <p>ASTERISK 練習日程・出欠管理ページです。</p>
+          <ul>
+            <li>開催約3時間前を目安に当日のLINEグループを作成します。</li>
+            <li>遅刻する場合は必ずグループLINEで連絡してください。</li>
+            <li>
+              ボールやホイッスルを持参した方は、グループLINEでご連絡ください。
+            </li>
+            <li>ボールを1個持参すると100円引きです。</li>
+            <li><b>30分以上遅刻した場合は割引対象外です。</b></li>
+            <li>参加後の変更が必要な場合は代表者へ連絡してください。</li>
+            <li>ボールを蹴る行為・壁打ちは禁止です。</li>
+            <li>施設内・指定場所以外での喫煙は禁止です。</li>
+            <li>施設のルールを守ってご参加ください。</li>
+            <li>参加費は各日程に表示されている金額をご確認ください。</li>
+          </ul>
+        </div>
+      </details>
+      <section id="profile" class="card"></section>
+      <section class="filters">
+        <div class="filterHead" onclick="toggleFilters()">
+          <span>🔎 絞り込み</span><span id="filterArrow">⌃</span>
+        </div>
+        <div id="filterBody" class="filterBody">
+          <b>月</b>
+          <div id="months" class="chips"></div>
+          <b>レベル（複数選択可）</b>
+          <div id="marks" class="chips"></div>
+          <b>開催地域（複数選択可）</b>
+          <div id="regions" class="chips"></div>
+          <b>自分の回答状況</b>
+          <div id="states" class="chips"></div>
+          <b>🗓️ カレンダーから日付検索</b>
+          <div class="dateSearch">
+            <input
+              id="dateSearch"
+              type="date"
+              aria-label="開催日を選択"
+              onchange="setDateSearch(this.value)"
+            /><button class="btn" onclick="clearDateSearch()">
+              日付をクリア
+            </button>
+          </div>
+        </div>
+      </section>
+      <div class="toolbar">
+        <button class="btn primary" onclick="setAll(true)">すべて開く</button
+        ><button class="btn" onclick="setAll(false)">すべて閉じる</button>
+      </div>
+      <div id="events"></div>
+    </main>
+    <script>
+      const API =
+          "https://ymppbgyjulrkvjtlfval.supabase.co/functions/v1/attendance-api",
+        K = "asterisk_member_token",
+        MARKS = ["🚹️", "⭐", "🌺", "🌸", "💎", "🏐", "✡️", "🌠"];
+      let data = { events: [], responses: [], visitor_counts: {} },
+        mine = {},
+        myName = "",
+        myRealName = "",
+        myGender = "",
+        month = "all",
+        selMarks = new Set(),
+        selRegions = new Set(),
+        state = "all",
+        selectedDate = "",
+        openSet = new Set(),
+        filtersOpen = true;
+      const esc = (s) =>
+        String(s ?? "").replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[m],
+        );
+      function regionOf(v) {
+        v = String(v || "");
+        const rules = [
+          [
+            "世田谷区",
+            ["世田谷", "北沢", "希望丘", "宮坂", "武蔵丘", "光明学園"],
+          ],
+          ["杉並区", ["杉並", "永福", "西荻"]],
+          [
+            "北区",
+            [
+              "北区",
+              "桐ケ丘",
+              "赤羽",
+              "北の台",
+              "王子特別支援",
+              "北特別支援",
+              "十条台",
+              "堀船",
+            ],
+          ],
+          ["大田区", ["大田", "馬込"]],
+          ["練馬区", ["練馬"]],
+          ["清瀬市", ["清瀬", "下宿"]],
+          ["春日部市", ["春日部"]],
+          ["蓮田市", ["蓮田"]],
+          ["横浜市", ["保土ヶ谷", "保土ケ谷", "横浜"]],
+        ];
+        for (const [r, ks] of rules)
+          if (ks.some((k) => v.includes(k))) return r;
+        return "その他";
+      }
+      async function call(a, b) {
+        const r = await fetch(API + "?action=" + a, {
+          method: b ? "POST" : "GET",
+          headers: { "Content-Type": "application/json" },
+          body: b ? JSON.stringify(b) : undefined,
+        });
+        const j = await r.json();
+        if (!r.ok) throw Error(j.error || "通信エラー");
+        return j;
+      }
+      async function loadMe() {
+        const t = localStorage.getItem(K);
+        if (!t) {
+          profile.innerHTML =
+            '<b>メンバー登録</b><div class="muted">本人確認のため、本名を姓・名に分けて入力してください。本名は公開されません。</div><input id="lastName" autocomplete="family-name" placeholder="姓（例：山田）"><input id="firstName" autocomplete="given-name" placeholder="名（例：太郎）"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><button class="btn primary" onclick="reg()">登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p>';
+          return;
+        }
+        try {
+          const [m, roster] = await Promise.all([
+            call("me", { member_token: t }),
+            call("roster", { member_token: t }),
+          ]);
+          mine = {};
+          myName = m.member.display_name || "";
+          myRealName = m.member.real_name || "";
+          myGender = m.member.gender || "";
+          (m.responses || []).forEach((r) => (mine[r.event_id] = r));
+          data.responses = roster.responses || [];
+          const nameParts = myRealName.split(/\s+/).filter(Boolean),
+            lastName = nameParts.shift() || "",
+            firstName = nameParts.join(" ");
+          profile.innerHTML =
+            "<div><b>" +
+            esc(myName) +
+            '</b><div class="muted">登録済みです。本名は公開されません。</div><button class="btn" onclick="toggleProfileEdit()">✏️ 名前を変更する</button></div><div id="profileEdit" class="hidden"><input id="editLastName" autocomplete="family-name" placeholder="姓" value="' +
+            esc(lastName) +
+            '"><input id="editFirstName" autocomplete="given-name" placeholder="名" value="' +
+            esc(firstName) +
+            '"><input id="editDisplayName" placeholder="登録名・ニックネーム" value="' +
+            esc(myName) +
+            '"><select id="editGender"><option value="">性別を選択</option><option value="男性" ' +
+            (myGender === "男性" ? "selected" : "") +
+            '>男性</option><option value="女性" ' +
+            (myGender === "女性" ? "selected" : "") +
+            '>女性</option></select><button class="btn primary" onclick="saveProfile()">変更を保存する</button><button class="btn" onclick="toggleProfileEdit()">閉じる</button><p id="profileError" style="color:#b42318;font-weight:800"></p></div>';
+        } catch {
+          localStorage.removeItem(K);
+          location.reload();
+        }
+      }
+      async function reg() {
+        const lastName = document.getElementById("lastName").value.trim(),
+          firstName = document.getElementById("firstName").value.trim(),
+          dn = document.getElementById("displayName").value.trim(),
+          gender = document.getElementById("gender").value,
+          msg = document.getElementById("regError");
+        msg.textContent = "";
+        if (!lastName) return (msg.textContent = "姓を入力してください");
+        if (!firstName) return (msg.textContent = "名を入力してください");
+        if (!dn)
+          return (msg.textContent = "登録名・ニックネームを入力してください");
+        if (!gender) return (msg.textContent = "性別を選択してください");
+        try {
+          const j = await call("register", {
+            real_name: lastName + " " + firstName,
+            display_name: dn,
+            gender,
+          });
+          localStorage.setItem(K, j.member_token);
+          location.reload();
+        } catch (e) {
+          msg.textContent =
+            e.message || "登録できませんでした。入力内容を確認してください";
+        }
+      }
+      function toggleProfileEdit() {
+        document.getElementById("profileEdit")?.classList.toggle("hidden");
+      }
+      async function saveProfile() {
+        const lastName = document.getElementById("editLastName").value.trim(),
+          firstName = document.getElementById("editFirstName").value.trim(),
+          displayName = document.getElementById("editDisplayName").value.trim(),
+          gender = document.getElementById("editGender").value,
+          msg = document.getElementById("profileError"),
+          token = localStorage.getItem(K);
+        msg.textContent = "";
+        if (!lastName) return (msg.textContent = "姓を入力してください");
+        if (!firstName) return (msg.textContent = "名を入力してください");
+        if (!displayName)
+          return (msg.textContent = "登録名・ニックネームを入力してください");
+        if (!gender) return (msg.textContent = "性別を選択してください");
+        try {
+          await call("member-update-profile", {
+            member_token: token,
+            real_name: lastName + " " + firstName,
+            display_name: displayName,
+            gender,
+          });
+          alert("名前を変更しました");
+          await boot();
+        } catch (e) {
+          msg.textContent = e.message || "名前を変更できませんでした";
+        }
+      }
+      function toggleFilters() {
+        filtersOpen = !filtersOpen;
+        filterBody.classList.toggle("hidden", !filtersOpen);
+        filterArrow.textContent = filtersOpen ? "⌃" : "⌄";
+      }
+      function togMark(x) {
+        selMarks.has(x) ? selMarks.delete(x) : selMarks.add(x);
+        render();
+      }
+      function togRegion(x) {
+        selRegions.has(x) ? selRegions.delete(x) : selRegions.add(x);
+        render();
+      }
+      function setAll(v) {
+        document
+          .querySelectorAll(".eventBody")
+          .forEach((x) => x.classList.toggle("hidden", !v));
+        document
+          .querySelectorAll(".arr")
+          .forEach((x) => (x.textContent = v ? "⌃" : "⌄"));
+        if (v) (data.events || []).forEach((e) => openSet.add(e.id));
+        else openSet.clear();
+      }
+      function togEvent(id) {
+        openSet.has(id) ? openSet.delete(id) : openSet.add(id);
+        render();
+      }
+      function myState(e) {
+        return mine[e.id]?.status || "unanswered";
+      }
+      function setDateSearch(v) {
+        selectedDate = v || "";
+        if (selectedDate) month = "all";
+        render();
+      }
+      function clearDateSearch() {
+        selectedDate = "";
+        const x = document.getElementById("dateSearch");
+        if (x) x.value = "";
+        render();
+      }
+      function calendarUrl(e) {
+        const date = String(e.event_date || "").replaceAll("-", ""),
+          start = String(e.start_time || "09:00").slice(0, 5),
+          end = String(e.end_time || "12:00").slice(0, 5),
+          st = start.replace(":", "") + "00",
+          et = end.replace(":", "") + "00",
+          title =
+            String(e.title || "練習") +
+            "｜" +
+            String(e.venue || "") +
+            "｜" +
+            start +
+            "–" +
+            end;
+        return (
+          "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" +
+          encodeURIComponent(title) +
+          "&dates=" +
+          date +
+          "T" +
+          st +
+          "/" +
+          date +
+          "T" +
+          et +
+          "&ctz=Asia%2FTokyo&location=" +
+          encodeURIComponent(e.venue || "") +
+          "&details=" +
+          encodeURIComponent("ASTERISK バレーボール練習")
+        );
+      }
+      function render() {
+        const today = new Date(Date.now() + 9 * 3600000)
+            .toISOString()
+            .slice(0, 10),
+          es0 = (data.events || []).filter(
+            (e) => String(e.event_date) >= today,
+          ),
+          ms = [...new Set(es0.map((e) => e.event_date.slice(0, 7)))].sort(),
+          rg = [...new Set(es0.map((e) => regionOf(e.venue)))].sort();
+        months.innerHTML = [
+          ["all", "すべて"],
+          ...ms.map((x) => [x, +x.slice(5) + "月"]),
+        ]
+          .map(
+            (x) =>
+              `<button class="${month === x[0] ? "on" : ""}" onclick="month='${x[0]}';render()">${x[1]}</button>`,
+          )
+          .join("");
+        marks.innerHTML = MARKS.map(
+          (x) =>
+            `<button class="${selMarks.has(x) ? "on" : ""}" onclick="togMark('${x}')">${x}</button>`,
+        ).join("");
+        regions.innerHTML = rg
+          .map(
+            (x) =>
+              `<button class="${selRegions.has(x) ? "on" : ""}" onclick="togRegion('${x}')">${esc(x)}</button>`,
+          )
+          .join("");
+        states.innerHTML = [
+          ["all", "すべて"],
+          ["yes", "参加済み"],
+          ["waitlist", "キャンセル待ち"],
+          ["unanswered", "未回答"],
+        ]
+          .map(
+            (x) =>
+              `<button class="${state === x[0] ? "on" : ""}" onclick="state='${x[0]}';render()">${x[1]}</button>`,
+          )
+          .join("");
+        const es = es0.filter(
+          (e) =>
+            (month === "all" || e.event_date.startsWith(month)) &&
+            (!selMarks.size ||
+              [...selMarks].every((m) => String(e.title || "").includes(m))) &&
+            (!selRegions.size || selRegions.has(regionOf(e.venue))) &&
+            (state === "all" || myState(e) === state) &&
+            (!selectedDate || e.event_date === selectedDate),
+        );
+        events.innerHTML =
+          es
+            .map((e) => {
+              const rs = (data.responses || []).filter(
+                  (r) => r.event_id === e.id,
+                ),
+                my = mine[e.id],
+                statusLabel = {
+                  yes: "参加",
+                  maybe: "未定",
+                  no: "不参加",
+                  waitlist: "キャンセル待ち",
+                },
+                participants = rs.filter((r) => r.status === "yes"),
+                answers = myName
+                  ? `<details class="answers" onclick="event.stopPropagation()"><summary>参加メンバー（${participants.length}名）</summary>${participants.length ? participants.map((r) => `<div class="answer"><div class="answerHead"><span>${esc(r.display_name)}</span>${r.gender ? `<span class="genderBadge ${r.gender === "男性" ? "male" : "female"}">${esc(r.gender)}</span>` : ""}<span class="answerStatus">参加</span></div>${Number(r.guest_count || 0) > 0 ? `<div class="answerComment">👥 友人 ${Number(r.guest_count)}人</div>` : ""}${r.comment ? `<div class="answerComment">${esc(r.comment)}</div>` : ""}</div>`).join("") : '<div class="answerEmpty">参加者はまだいません</div>'}</details>`
+                  : "",
+                mc = rs
+                  .filter((r) => r.status === "yes")
+                  .reduce((n, r) => n + 1 + Number(r.guest_count || 0), 0),
+                vc = Number(data.visitor_counts?.[e.id] || 0),
+                vp = Math.max(
+                  0,
+                  Number(data.visitor_active_counts?.[e.id] || 0) - vc,
+                ),
+                totalCap = Number(e.capacity ?? 20),
+                confirmedCount = mc + vc,
+                usedCount = confirmedCount + vp,
+                remaining = Math.max(0, totalCap - usedCount),
+                full =
+                  mc >= Number(e.member_capacity ?? totalCap) ||
+                  usedCount >= totalCap,
+                wl = rs.filter((r) => r.status === "waitlist"),
+                pos =
+                  my?.status === "waitlist"
+                    ? wl.findIndex((r) => r.display_name === myName) + 1
+                    : 0,
+                op = openSet.has(e.id),lockedSep=String(e.event_date||'').startsWith('2026-09');
+              return `<section class="event"><div class="eventHead" onclick="togEvent('${e.id}')"><span>${esc(e.event_date)} ${esc(e.day_label || "")}　${esc(e.title || "")}<br><span class="muted">📍 ${esc(e.venue)}　🕒 ${String(e.start_time || "").slice(0, 5)}-${String(e.end_time || "").slice(0, 5)}</span></span><span class="arr">${op ? "⌃" : "⌄"}</span></div><div class="eventBody ${op ? "" : "hidden"}"><div class="meta"><b>💴 参加費 ¥${Number(e.participation_fee || 400).toLocaleString()}</b><div class="capacityInfo"><span>参加確定 ${confirmedCount}/${totalCap}人</span>${vp ? `<span>申請中 ${vp}人</span>` : ""}<span>残り ${remaining}人</span></div>${full ? '<span class="full">満員</span>' : ""}</div><a class="btn calendarBtn" href="${calendarUrl(e)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📅 カレンダーに追加</a>${lockedSep ? `<div class="lockedMonth">🔒 9月分の新規参加受付は終了しました</div>${my?.status==="yes"?'<button class="btn yes selected" disabled>✓ 参加済み</button>':""}` : my?.status === "yes" ? '<button class="btn yes selected" disabled>✓ 参加済み</button>' : full ? (my?.status === "waitlist" ? `<button class="btn wait selected" disabled>⏳ キャンセル待ち登録済み</button><div class="joined">現在 ${pos || wl.length}番目です</div>` : `<button class="btn wait" onclick="event.stopPropagation();respond('${e.id}','waitlist')">⏳ キャンセル待ち</button>`) : `<button class="btn yes" onclick="event.stopPropagation();respond('${e.id}','yes')">✓ 参加する</button>`}<label class="muted" for="g-${e.id}">一緒に参加する友人数</label><select id="g-${e.id}" ${lockedSep?"disabled":""}><option value="0" ${Number(my?.guest_count || 0) === 0 ? "selected" : ""}>友人なし</option><option value="1" ${Number(my?.guest_count || 0) === 1 ? "selected" : ""}>友人1人</option><option value="2" ${Number(my?.guest_count || 0) === 2 ? "selected" : ""}>友人2人</option><option value="3" ${Number(my?.guest_count || 0) === 3 ? "selected" : ""}>友人3人</option></select><div class="muted">本人を含めて定員枠を確保します。コメントに「友人1人」などと書いた場合も自動で反映します。</div><textarea id="c-${e.id}" placeholder="備考・コメント" ${lockedSep?"disabled":""}>${esc(my?.comment || "")}</textarea>${lockedSep?"":`<button class="btn primary" onclick="event.stopPropagation();saveComment(\'${e.id}\')">コメントを保存</button>`}${answers}</div></section>`;
+            })
+            .join("") ||
+          '<div class="box">条件に一致する日程はありません。</div>';
+      }
+      function guestFromComment(s) {
+        s = String(s || "");
+        if (
+          !/(友人|友達).{0,12}(連れて|一緒|参加|来ます|来る|行きます|行く)/.test(
+            s,
+          )
+        )
+          return 0;
+        const m = s.match(
+          /(?:友人|友達)[^0-9一二三]{0,6}([1-3一二三])\s*(?:人|名)?/,
+        );
+        return m ? { 一: 1, 二: 2, 三: 3 }[m[1]] || Number(m[1]) : 1;
+      }
+      async function respond(id, status) {
+        const t = localStorage.getItem(K);
+        if (!t) return alert("先にメンバー登録してください");
+        const comment = document.getElementById("c-" + id)?.value || "";
+        let guest_count = Number(
+          document.getElementById("g-" + id)?.value || 0,
+        );
+        if (status === "yes" && guest_count === 0) {
+          const inferred = guestFromComment(comment);
+          if (inferred) {
+            guest_count = inferred;
+            const el = document.getElementById("g-" + id);
+            if (el) el.value = String(inferred);
+            alert(
+              "コメントから友人" + inferred + "人として自動で人数に追加します",
+            );
+          }
+        }
+        try {
+          await call("respond", {
+            member_token: t,
+            event_id: id,
+            status,
+            comment,
+            guest_count,
+          });
+          openSet.add(id);
+          await boot();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function saveComment(id) {
+        const cur = mine[id];
+        if (!cur?.status)
+          return alert("先に参加またはキャンセル待ちを登録してください");
+        await respond(id, cur.status);
+      }
+      async function boot() {
+        data = await call("bootstrap");
+        await loadMe();
+        const x = document.getElementById("dateSearch");
+        if (x)
+          x.min = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+        render();
+      }
+      boot().catch(
+        (e) =>
+          (events.innerHTML = '<div class="box">' + esc(e.message) + "</div>"),
+      );
+    </script>
+  </body>
+</html>
