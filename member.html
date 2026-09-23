@@ -613,7 +613,7 @@
           profile.innerHTML =
             "<div><b>" +
             esc(myName) +
-            '</b><div class="muted">登録済みです。本名は公開されません。</div><button class="btn" onclick="toggleProfileEdit()">✏️ 名前を変更する</button></div><div id="profileEdit" class="hidden"><input id="editLastName" autocomplete="family-name" placeholder="姓" value="' +
+            '</b><div class="muted">登録済みです。本名は公開されません。</div><button class="btn primary" onclick="copyMyMemberUrl()">🔗 自分専用URLをコピー</button><div class="muted">別のブラウザ・端末で開く場合は、この専用URLを使ってください。</div><button class="btn" onclick="toggleProfileEdit()">✏️ 名前を変更する</button></div><div id="profileEdit" class="hidden"><input id="editLastName" autocomplete="family-name" placeholder="姓" value="' +
             esc(lastName) +
             '"><input id="editFirstName" autocomplete="given-name" placeholder="名" value="' +
             esc(firstName) +
@@ -629,6 +629,8 @@
           location.reload();
         }
       }
+
+      async function copyMyMemberUrl(){const t=localStorage.getItem(K);if(!t)return alert("登録情報が見つかりません");const url=location.origin+location.pathname+"?"+SHARE_PARAM+"="+encodeURIComponent(t);try{await navigator.clipboard.writeText(url);alert("自分専用URLをコピーしました。\n別のブラウザでもこのURLを使えば登録状態を引き継げます。")}catch(_){prompt("この自分専用URLをコピーしてください",url)}}
       async function reg() {
         const lastName = document.getElementById("lastName").value.trim(),
           firstName = document.getElementById("firstName").value.trim(),
