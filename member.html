@@ -520,6 +520,7 @@
       const API =
           "https://ymppbgyjulrkvjtlfval.supabase.co/functions/v1/attendance-api",
         K = "asterisk_member_token",
+        SHARE_PARAM = "member",
         MARKS = ["🚹️", "⭐", "🌺", "🌸", "💎", "🏐", "✡️", "🌠"];
       let data = { events: [], responses: [], visitor_counts: {} },
         mine = {},
@@ -588,6 +589,7 @@
         return j;
       }
       async function loadMe() {
+        const qp=new URLSearchParams(location.search),shared=qp.get(SHARE_PARAM);if(shared){localStorage.setItem(K,shared);try{history.replaceState(null,'',location.pathname)}catch(_){}}
         const t = localStorage.getItem(K);
         if (!t) {
           profile.innerHTML =
@@ -645,7 +647,7 @@
             display_name: dn,
             gender,
           });
-          localStorage.setItem(K, j.member_token);
+          localStorage.setItem(K, j.member_token);try{history.replaceState(null,'',location.pathname+'?'+SHARE_PARAM+'='+encodeURIComponent(j.member_token))}catch(_){}
           location.reload();
         } catch (e) {
           msg.textContent =
