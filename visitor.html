@@ -477,6 +477,7 @@
         renderApps();
       }
       function renderApps() {
+        const applications = document.getElementById('applications');
         applications.innerHTML = apps.length
           ? apps
               .map(
