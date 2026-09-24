@@ -593,7 +593,7 @@
         const t = localStorage.getItem(K);
         if (!t) {
           profile.innerHTML =
-            '<b>メンバー登録</b><div class="muted">本人確認のため、本名を姓・名に分けて入力してください。本名は公開されません。</div><input id="lastName" autocomplete="family-name" placeholder="姓（例：山田）"><input id="firstName" autocomplete="given-name" placeholder="名（例：太郎）"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><button class="btn primary" onclick="reg()">登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p>';
+            '<b>メンバー登録</b><div class="muted">本人確認のため、本名を姓・名に分けて入力してください。本名は公開されません。</div><input id="lastName" autocomplete="family-name" placeholder="姓（例：山田）"><input id="firstName" autocomplete="given-name" placeholder="名（例：太郎）"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><button class="btn primary" onclick="reg()">登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p><details style="margin-top:14px"><summary style="font-weight:900;cursor:pointer">🔑 すでに登録済みの方・この端末で復旧</summary><div class="muted" style="margin:8px 0">登録時の本名と登録名を入力してください。</div><input id="recoverLastName" placeholder="姓"><input id="recoverFirstName" placeholder="名"><input id="recoverDisplayName" placeholder="登録名・ニックネーム"><button class="btn primary" onclick="recoverMember()">この端末で復旧する</button><p id="recoverError" style="color:#b42318;font-weight:800"></p></details>';
           return;
         }
         try {
@@ -656,7 +656,7 @@
             e.message || "登録できませんでした。入力内容を確認してください";
         }
       }
-      function toggleProfileEdit() {
+      async function recoverMember(){const ln=document.getElementById('recoverLastName').value.trim(),fn=document.getElementById('recoverFirstName').value.trim(),dn=document.getElementById('recoverDisplayName').value.trim(),msg=document.getElementById('recoverError');msg.textContent='';if(!ln||!fn||!dn){msg.textContent='姓・名・登録名を入力してください';return}try{const j=await call('member-recover',{real_name:ln+' '+fn,display_name:dn});localStorage.setItem(K,j.member_token);try{history.replaceState(null,'',location.pathname+'?'+SHARE_PARAM+'='+encodeURIComponent(j.member_token))}catch(_){}location.reload()}catch(e){msg.textContent=e.message||'復旧できませんでした'}}function toggleProfileEdit() {
         document.getElementById("profileEdit")?.classList.toggle("hidden");
       }
       async function saveProfile() {
