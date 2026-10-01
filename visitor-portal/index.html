@@ -625,7 +625,9 @@
                 e.id +
                 '" value="' +
                 esc(p.volleyball_history || "") +
-                '"></div><div class="wide"><label>LINE URL</label><input id="line-' +
+                '"></div><div><label>希望ポジション</label><select id="position-' +
+                e.id +
+                '"><option value="">選択してください</option><option value="サイド">サイド</option><option value="ミドル">ミドル</option><option value="セッター">セッター</option><option value="リベロ">リベロ</option><option value="どこでも">どこでも</option></select></div><div class="wide"><label>LINE URL</label><input id="line-' +
                 e.id +
                 '" required value="' +
                 esc(p.contact || "") +
@@ -654,6 +656,8 @@
         document.getElementById("age-" + id).value = p.age || "";
         document.getElementById("history-" + id).value =
           p.volleyball_history || "";
+        document.getElementById("position-" + id).value =
+          p.desired_position || "";
         document.getElementById("line-" + id).value = p.contact || "";
       }
       async function apply(id, waitlist = false) {
@@ -664,6 +668,7 @@
           volleyball_history: document
             .getElementById("history-" + id)
             .value.trim(),
+          desired_position: document.getElementById("position-" + id).value,
           contact: document.getElementById("line-" + id).value.trim(),
         };
         if (
@@ -671,10 +676,11 @@
           !p.gender ||
           !p.age ||
           !p.volleyball_history ||
+          !p.desired_position ||
           !p.contact
         )
           return alert(
-            "名前・性別・年齢・バレー歴・LINE URLを入力してください",
+            "名前・性別・年齢・バレー歴・希望ポジション・LINE URLを入力してください",
           );
         try {
           const r = await fetch(APPLY, {
