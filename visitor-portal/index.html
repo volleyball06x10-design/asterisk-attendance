@@ -288,7 +288,15 @@
       </div>
       <section class="card">
         <h2>📋 自分の申請を確認</h2>
-        <p class="muted">この端末から申請した日程を確認できます。</p>
+        <p class="muted">この端末に履歴がない場合は、申請時の登録名とLINE URLまたはLINE名で確認できます。</p>
+        <div class="applybox">
+          <div class="formgrid">
+            <div><label for="lookupName">登録名・お名前</label><input id="lookupName" autocomplete="name" placeholder="申請時に入力した名前"></div>
+            <div><label for="lookupContact">申請時のLINE URLまたはLINE名</label><input id="lookupContact" autocomplete="off" placeholder="申請時に入力したLINE情報"></div>
+          </div>
+          <button type="button" class="btn secondary" onclick="lookupApplications()">申請状況を確認</button>
+          <div id="lookupMessage" class="muted" aria-live="polite"></div>
+        </div>
         <div id="applications" class="muted">申請履歴を確認しています…</div>
       </section>
       <div class="filters">
@@ -324,7 +332,8 @@
         mark = "all",
         region = "all",
         date = "",
-        apps = [];
+        apps = [],
+        lookupApps = [];
       const esc = (s) =>
         String(s ?? "").replace(
           /[&<>"']/g,
@@ -475,35 +484,65 @@
         renderApps();
       }
       function renderApps() {
-        const applications = document.getElementById('applications');
-        applications.innerHTML = apps.length
-          ? apps
-              .map(
-                (a) =>
+        const applications = document.getElementById("applications");
+        const list = [...apps, ...lookupApps].filter(
+          (a, i, all) => all.findIndex((x) => x.visitor?.id === a.visitor?.id) === i,
+        );
+        applications.innerHTML = list.length
+          ? list
+              .map((a) => {
+                const v = a.visitor || {};
+                const cancelButton =
+                  v.status === "pending" && a.token
+                    ? '<button class="btn danger" onclick="cancelApp(&#39;' + esc(a.token) + '&#39;)">申請を解除</button>'
+                    : "";
+                return (
                   '<div class="application"><b>📅 ' +
                   eventLine(a.event) +
                   "</b><div><b>レベル：</b>" +
                   esc(a.event?.title || "") +
                   "</div><div><b>申請者：</b>" +
-                  esc(a.visitor.display_name || "") +
+                  esc(v.display_name || "") +
                   '</div><div><b>状態：</b><span class="status ' +
-                  esc(a.visitor.status) +
+                  esc(v.status || "") +
                   '">' +
-                  esc(a.visitor.waitlist ? "キャンセル待ち" : appStatus(a.visitor.status)) +
+                  esc(v.waitlist ? "キャンセル待ち" : appStatus(v.status)) +
                   "</span></div><div><b>友人人数：</b>" +
-                  Number(a.visitor.guest_count || 0) +
+                  Number(v.guest_count || 0) +
                   "人</div><div><b>コメント：</b>" +
-                  esc(a.visitor.comment || "なし") +
+                  esc(v.comment || "なし") +
                   "</div>" +
-                  (a.visitor.status === "pending"
-                    ? '<button class="btn danger" onclick="cancelApp(\'' +
-                      esc(a.token) +
-                      "')\">申請を解除</button>"
-                    : "") +
-                  "</div>",
-              )
+                  cancelButton +
+                  "</div>"
+                );
+              })
               .join("")
-          : "この端末からの申請履歴はありません。";
+          : "この端末からの申請履歴はありません。登録名と申請時のLINE情報で検索してください。";
+      }
+      async function lookupApplications() {
+        const display_name = document.getElementById("lookupName").value.trim();
+        const contact = document.getElementById("lookupContact").value.trim();
+        const message = document.getElementById("lookupMessage");
+        if (!display_name || !contact) {
+          message.textContent = "登録名とLINE URLまたはLINE名を入力してください。";
+          return;
+        }
+        lookupApps = [];
+        renderApps();
+        message.textContent = "申請状況を確認しています…";
+        try {
+          const result = await api("visitor-lookup", { display_name, contact });
+          lookupApps = result.applications || [];
+          renderApps();
+          message.textContent = lookupApps.length
+            ? "申請状況を表示しました。"
+            : "一致する申請はありません。入力内容をご確認ください。";
+        } catch {
+          lookupApps = [];
+          renderApps();
+          message.textContent =
+            "確認できませんでした。登録名と申請時のLINE情報をご確認ください。";
+        }
       }
       async function cancelApp(token) {
         if (!confirm("この申請を解除しますか？")) return;
