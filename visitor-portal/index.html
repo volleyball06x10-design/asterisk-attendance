@@ -611,7 +611,7 @@
                 e.id +
                 '" value="' +
                 esc(p.display_name || "") +
-                '"></div><div><label>性別</label><select id="gender-' +
+                '"></div><div><label>友人の人数</label><select id="guest-count-' + e.id + '"><option value="0">友人なし</option><option value="1">友人1人</option><option value="2">友人2人</option><option value="3">友人3人</option></select></div><div><label>性別</label><select id="gender-' +
                 e.id +
                 '"><option value="">選択してください</option><option value="男子" ' +
                 (p.gender === "男子" ? "selected" : "") +
@@ -652,6 +652,7 @@
       function copyProfile(id) {
         const p = profile();
         document.getElementById("name-" + id).value = p.display_name || "";
+        document.getElementById("guest-count-" + id).value = p.guest_count || 0;
         document.getElementById("gender-" + id).value = p.gender || "";
         document.getElementById("age-" + id).value = p.age || "";
         document.getElementById("history-" + id).value =
@@ -663,6 +664,7 @@
       async function apply(id, waitlist = false) {
         const p = {
           display_name: document.getElementById("name-" + id).value.trim(),
+          guest_count: Number(document.getElementById("guest-count-" + id).value || 0),
           gender: document.getElementById("gender-" + id).value,
           age: Number(document.getElementById("age-" + id).value),
           volleyball_history: document
