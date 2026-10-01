@@ -597,7 +597,7 @@
         const t = localStorage.getItem(K);
         if (!t) {
           document.body.classList.add('auth-required');
-          profile.innerHTML = '<b>正規メンバー専用ログイン</b><div class="muted">LINE URLとパスワードを入力してください。日程と参加者情報はログイン後に表示されます。</div><input id="loginLineUrl" placeholder="ログインID（ご自身のLINE URL）" autocomplete="username"><input id="loginPassword" type="password" placeholder="パスワード" autocomplete="current-password"><button class="btn primary" onclick="loginMember()">ログイン</button><p id="loginError" style="color:#b42318;font-weight:800"></p><details style="margin-top:14px"><summary style="font-weight:900;cursor:pointer">初めて利用する方・登録端末を復旧する方</summary><div class="muted" style="margin:8px 0">メンバー招待コードが必要です。登録済みの方は本名・登録名を入力して同じアカウントを復旧できます。</div><input id="inviteCode" type="password" placeholder="メンバー招待コード" autocomplete="off"><input id="lastName" autocomplete="family-name" placeholder="姓"><input id="firstName" autocomplete="given-name" placeholder="名"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><input id="registerLineUrl" placeholder="ログインID（LINE URL）"><input id="registerPassword" type="password" placeholder="パスワード（8文字以上）"><button class="btn primary" onclick="reg()">新規登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p><hr><b>登録済みアカウントの復旧</b><input id="recoverLastName" placeholder="姓"><input id="recoverFirstName" placeholder="名"><input id="recoverDisplayName" placeholder="登録名・ニックネーム"><input id="recoverLineUrl" placeholder="ログインID（LINE URL）"><input id="recoverPassword" type="password" placeholder="新しいパスワード（8文字以上）"><button class="btn" onclick="recoverMember()">アカウントを復旧する</button><p id="recoverError" style="color:#b42318;font-weight:800"></p></details>';
+          profile.innerHTML = '<b>正規メンバー専用ログイン</b><div class="muted">LINE URLとパスワードを入力してください。日程と参加者情報はログイン後に表示されます。</div><input id="loginLineUrl" placeholder="ログインID（ご自身のLINE URL）" autocomplete="username"><input id="loginPassword" type="password" placeholder="パスワード" autocomplete="current-password"><button class="btn primary" onclick="loginMember()">ログイン</button><p id="loginError" style="color:#b42318;font-weight:800"></p><details style="margin-top:14px"><summary style="font-weight:900;cursor:pointer">初めて利用する方・登録端末を復旧する方</summary><div class="muted" style="margin:8px 0">必要事項を入力して新規登録できます。登録済みの方は本名・登録名を入力して同じアカウントを復旧できます。</div><input id="lastName" autocomplete="family-name" placeholder="姓"><input id="firstName" autocomplete="given-name" placeholder="名"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><input id="registerLineUrl" placeholder="ログインID（LINE URL）"><input id="registerPassword" type="password" placeholder="パスワード（8文字以上）"><button class="btn primary" onclick="reg()">新規登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p><hr><b>登録済みアカウントの復旧</b><input id="recoverLastName" placeholder="姓"><input id="recoverFirstName" placeholder="名"><input id="recoverDisplayName" placeholder="登録名・ニックネーム"><input id="recoverLineUrl" placeholder="ログインID（LINE URL）"><input id="recoverPassword" type="password" placeholder="新しいパスワード（8文字以上）"><button class="btn" onclick="recoverMember()">アカウントを復旧する</button><p id="recoverError" style="color:#b42318;font-weight:800"></p></details>';
           return;
         }
         try {
@@ -629,23 +629,40 @@
           firstName = document.getElementById("firstName").value.trim(),
           dn = document.getElementById("displayName").value.trim(),
           gender = document.getElementById("gender").value,
-          inviteCode = document.getElementById("inviteCode").value.trim(),
           lineUrl = document.getElementById("registerLineUrl").value.trim(),
           password = document.getElementById("registerPassword").value,
           msg = document.getElementById("regError");
         msg.textContent = "";
-        if (!inviteCode) return (msg.textContent = "メンバー招待コードを入力してください");
         if (!lastName) return (msg.textContent = "姓を入力してください");
         if (!firstName) return (msg.textContent = "名を入力してください");
         if (!dn) return (msg.textContent = "登録名・ニックネームを入力してください");
         if (!gender) return (msg.textContent = "性別を選択してください");
         if (!lineUrl || password.length < 8) return (msg.textContent = "LINE URLと8文字以上のパスワードを入力してください");
         try {
-          const j = await call("register", {real_name:lastName + " " + firstName,display_name:dn,gender,line_url:lineUrl,password,invite_code:inviteCode});
+          const j = await call("register", {real_name:lastName + " " + firstName,display_name:dn,gender,line_url:lineUrl,password});
           localStorage.setItem(K, j.member_token);location.reload();
         } catch (e) { msg.textContent = e.message || "登録できませんでした。入力内容を確認してください"; }
       }
-      async function recoverMember(){const ln=document.getElementById('recoverLastName').value.trim(),fn=document.getElementById('recoverFirstName').value.trim(),dn=document.getElementById('recoverDisplayName').value.trim(),line=document.getElementById('recoverLineUrl').value.trim(),password=document.getElementById('recoverPassword').value,invite=document.getElementById('inviteCode').value.trim(),msg=document.getElementById('recoverError');msg.textContent='';if(!ln||!fn||!dn||!line||password.length<8||!invite){msg.textContent='招待コード・姓・名・登録名・LINE URL・8文字以上の新しいパスワードを入力してください';return}try{const j=await call('member-recover',{real_name:ln+' '+fn,display_name:dn,line_url:line,password,invite_code:invite});localStorage.setItem(K,j.member_token);location.reload()}catch(e){msg.textContent=e.message||'復旧できませんでした'}}
+      async function recoverMember() {
+        const ln = document.getElementById("recoverLastName").value.trim(),
+          fn = document.getElementById("recoverFirstName").value.trim(),
+          dn = document.getElementById("recoverDisplayName").value.trim(),
+          line = document.getElementById("recoverLineUrl").value.trim(),
+          password = document.getElementById("recoverPassword").value,
+          msg = document.getElementById("recoverError");
+        msg.textContent = "";
+        if (!ln || !fn || !dn || !line || password.length < 8) {
+          msg.textContent = "姓・名・登録名・LINE URL・8文字以上の新しいパスワードを入力してください";
+          return;
+        }
+        try {
+          const j = await call("member-recover", {real_name: ln + " " + fn, display_name: dn, line_url: line, password});
+          localStorage.setItem(K, j.member_token);
+          location.reload();
+        } catch (e) {
+          msg.textContent = e.message || "復旧できませんでした";
+        }
+      }
       function toggleProfileEdit() {
         document.getElementById("profileEdit")?.classList.toggle("hidden");
       }
