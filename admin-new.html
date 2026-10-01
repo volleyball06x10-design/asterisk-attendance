@@ -486,7 +486,18 @@
                           r.display_name ||
                           "名前未取得",
                       ) +
-                      (Number(r.guest_count || 0) > 0
+                                            ((r.attendance_members &&
+                        r.attendance_members.real_name) ||
+                      r.real_name
+                        ? "（本名：" +
+                          esc(
+                            (r.attendance_members &&
+                              r.attendance_members.real_name) ||
+                              r.real_name,
+                          ) +
+                          "）"
+                        : "") +
+(Number(r.guest_count || 0) > 0
                         ? " ＋ 友人" + Number(r.guest_count || 0) + "人"
                         : "") +
                       '</b><select id="rs-' +
