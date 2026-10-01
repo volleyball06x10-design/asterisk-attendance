@@ -373,6 +373,7 @@
         font-size: 13px;
         font-weight: 800;
       }
+      body.auth-required main > :not(#profile){display:none!important}body.auth-required #profile{margin:18vh auto 0;max-width:560px;box-shadow:0 12px 36px rgba(23,32,51,.12)}
       @media (max-width: 420px) {
         .level-row {
           grid-template-columns: 48px 1fr;
@@ -383,7 +384,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="auth-required">
     <main>
       <h1>メンバー出欠</h1><section class="box" style="border:2px solid #d92d20;background:#fff1f0;color:#b42318;font-weight:900;line-height:1.8"><div style="font-size:18px">⚠️ 重要なお知らせ</div>本稼働は10月からなので、<br>9月分の出欠は押さないでください。<br>押したとしても絶対に一切カウントしません。<br><span style="font-size:18px">10月分だけ出欠をお願いします！</span></section>
       <section class="box info">
@@ -593,11 +594,10 @@
         return j;
       }
       async function loadMe() {
-        const qp=new URLSearchParams(location.search),shared=qp.get(SHARE_PARAM);if(shared){localStorage.setItem(K,shared);try{history.replaceState(null,'',location.pathname)}catch(_){}}
         const t = localStorage.getItem(K);
         if (!t) {
-          profile.innerHTML =
-            '<b>メンバー登録</b><div class="muted">本人確認のため、本名を姓・名に分けて入力してください。本名は公開されません。</div><input id="lastName" autocomplete="family-name" placeholder="姓（例：山田）"><input id="firstName" autocomplete="given-name" placeholder="名（例：太郎）"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><button class="btn primary" onclick="reg()">登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p><details style="margin-top:14px"><summary style="font-weight:900;cursor:pointer">🔑 すでに登録済みの方・この端末で復旧</summary><div class="muted" style="margin:8px 0">登録時の本名と登録名を入力してください。</div><input id="recoverLastName" placeholder="姓"><input id="recoverFirstName" placeholder="名"><input id="recoverDisplayName" placeholder="登録名・ニックネーム"><button class="btn primary" onclick="recoverMember()">この端末で復旧する</button><p id="recoverError" style="color:#b42318;font-weight:800"></p></details>';
+          document.body.classList.add('auth-required');
+          profile.innerHTML = '<b>正規メンバー専用ログイン</b><div class="muted">LINE URLとパスワードを入力してください。日程と参加者情報はログイン後に表示されます。</div><input id="loginLineUrl" placeholder="ログインID（ご自身のLINE URL）" autocomplete="username"><input id="loginPassword" type="password" placeholder="パスワード" autocomplete="current-password"><button class="btn primary" onclick="loginMember()">ログイン</button><p id="loginError" style="color:#b42318;font-weight:800"></p><details style="margin-top:14px"><summary style="font-weight:900;cursor:pointer">初めて利用する方・登録端末を復旧する方</summary><div class="muted" style="margin:8px 0">メンバー招待コードが必要です。登録済みの方は本名・登録名を入力して同じアカウントを復旧できます。</div><input id="inviteCode" type="password" placeholder="メンバー招待コード" autocomplete="off"><input id="lastName" autocomplete="family-name" placeholder="姓"><input id="firstName" autocomplete="given-name" placeholder="名"><input id="displayName" placeholder="登録名・ニックネーム"><select id="gender"><option value="">性別を選択</option><option value="男性">男性</option><option value="女性">女性</option></select><input id="registerLineUrl" placeholder="ログインID（LINE URL）"><input id="registerPassword" type="password" placeholder="パスワード（8文字以上）"><button class="btn primary" onclick="reg()">新規登録する</button><p id="regError" style="color:#b42318;font-weight:800"></p><hr><b>登録済みアカウントの復旧</b><input id="recoverLastName" placeholder="姓"><input id="recoverFirstName" placeholder="名"><input id="recoverDisplayName" placeholder="登録名・ニックネーム"><input id="recoverLineUrl" placeholder="ログインID（LINE URL）"><input id="recoverPassword" type="password" placeholder="新しいパスワード（8文字以上）"><button class="btn" onclick="recoverMember()">アカウントを復旧する</button><p id="recoverError" style="color:#b42318;font-weight:800"></p></details>';
           return;
         }
         try {
@@ -614,53 +614,39 @@
           const nameParts = myRealName.split(/\s+/).filter(Boolean),
             lastName = nameParts.shift() || "",
             firstName = nameParts.join(" ");
-          profile.innerHTML =
-            "<div><b>" +
-            esc(myName) +
-            '</b><div class="muted">登録済みです。本名は公開されません。</div><button class="btn primary" onclick="copyMyMemberUrl()">🔗 自分専用URLをコピー</button><div class="muted">別のブラウザ・端末で開く場合は、この専用URLを使ってください。</div><button class="btn" onclick="toggleProfileEdit()">✏️ 名前を変更する</button></div><div id="profileEdit" class="hidden"><input id="editLastName" autocomplete="family-name" placeholder="姓" value="' +
-            esc(lastName) +
-            '"><input id="editFirstName" autocomplete="given-name" placeholder="名" value="' +
-            esc(firstName) +
-            '"><input id="editDisplayName" placeholder="登録名・ニックネーム" value="' +
-            esc(myName) +
-            '"><select id="editGender"><option value="">性別を選択</option><option value="男性" ' +
-            (myGender === "男性" ? "selected" : "") +
-            '>男性</option><option value="女性" ' +
-            (myGender === "女性" ? "selected" : "") +
-            '>女性</option></select><button class="btn primary" onclick="saveProfile()">変更を保存する</button><button class="btn" onclick="toggleProfileEdit()">閉じる</button><p id="profileError" style="color:#b42318;font-weight:800"></p></div>';
+          document.body.classList.remove('auth-required');
+          profile.innerHTML = '<div><b>' + esc(myName) + '</b><div class="muted">登録済みです。本名は公開されません。</div><details style="margin-top:10px"><summary style="font-weight:900;cursor:pointer">🔐 ログインID・パスワード設定</summary><div class="muted">ご自身のLINE URLをログインIDとして登録します。パスワードは8文字以上で設定してください。</div><input id="setLineUrl" placeholder="LINE URL" value="' + esc(m.member.line_url || '') + '" autocomplete="username"><input id="setLoginPassword" type="password" placeholder="新しいパスワード（8文字以上）" autocomplete="new-password"><button class="btn primary" onclick="saveLoginSettings()">ログイン情報を保存</button><p id="loginSettingsError" style="color:#b42318;font-weight:800"></p><div class="muted">' + (m.member.has_password ? 'ログイン設定済みです。' : 'LINE URLとパスワードを設定すると、別の端末からログインできます。') + '</div></details><button class="btn" onclick="toggleProfileEdit()">✏️ 名前を変更する</button></div><div id="profileEdit" class="hidden"><input id="editLastName" autocomplete="family-name" placeholder="姓" value="' + esc(lastName) + '"><input id="editFirstName" autocomplete="given-name" placeholder="名" value="' + esc(firstName) + '"><input id="editDisplayName" placeholder="登録名・ニックネーム" value="' + esc(myName) + '"><select id="editGender"><option value="">性別を選択</option><option value="男性" ' + (myGender === "男性" ? "selected" : "") + '>男性</option><option value="女性" ' + (myGender === "女性" ? "selected" : "") + '>女性</option></select><button class="btn primary" onclick="saveProfile()">変更を保存する</button><button class="btn" onclick="toggleProfileEdit()">閉じる</button><p id="profileError" style="color:#b42318;font-weight:800"></p></div>';
         } catch {
           localStorage.removeItem(K);
           location.reload();
         }
       }
 
-      async function copyMyMemberUrl(){const t=localStorage.getItem(K);if(!t)return alert("登録情報が見つかりません");const url=location.origin+location.pathname+"?"+SHARE_PARAM+"="+encodeURIComponent(t);try{await navigator.clipboard.writeText(url);alert("自分専用URLをコピーしました。\n別のブラウザでもこのURLを使えば登録状態を引き継げます。")}catch(_){prompt("この自分専用URLをコピーしてください",url)}}
+      async function loginMember(){const line=document.getElementById('loginLineUrl').value.trim(),password=document.getElementById('loginPassword').value,msg=document.getElementById('loginError');msg.textContent='';if(!line||!password){msg.textContent='LINE URLとパスワードを入力してください';return}try{const j=await call('member-login',{line_url:line,password});localStorage.setItem(K,j.member_token);location.reload()}catch(e){msg.textContent=e.message||'ログインできませんでした'}}
+      async function saveLoginSettings(){const line=document.getElementById('setLineUrl').value.trim(),password=document.getElementById('setLoginPassword').value,msg=document.getElementById('loginSettingsError');msg.textContent='';if(!line||password.length<8){msg.textContent='LINE URLと8文字以上のパスワードを入力してください';return}try{await call('member-set-login',{member_token:localStorage.getItem(K),line_url:line,password});msg.textContent='ログイン情報を保存しました。次回からLINE URLとパスワードでログインできます。';document.getElementById('setLoginPassword').value=''}catch(e){msg.textContent=e.message||'保存できませんでした'}}
       async function reg() {
         const lastName = document.getElementById("lastName").value.trim(),
           firstName = document.getElementById("firstName").value.trim(),
           dn = document.getElementById("displayName").value.trim(),
           gender = document.getElementById("gender").value,
+          inviteCode = document.getElementById("inviteCode").value.trim(),
+          lineUrl = document.getElementById("registerLineUrl").value.trim(),
+          password = document.getElementById("registerPassword").value,
           msg = document.getElementById("regError");
         msg.textContent = "";
+        if (!inviteCode) return (msg.textContent = "メンバー招待コードを入力してください");
         if (!lastName) return (msg.textContent = "姓を入力してください");
         if (!firstName) return (msg.textContent = "名を入力してください");
-        if (!dn)
-          return (msg.textContent = "登録名・ニックネームを入力してください");
+        if (!dn) return (msg.textContent = "登録名・ニックネームを入力してください");
         if (!gender) return (msg.textContent = "性別を選択してください");
+        if (!lineUrl || password.length < 8) return (msg.textContent = "LINE URLと8文字以上のパスワードを入力してください");
         try {
-          const j = await call("register", {
-            real_name: lastName + " " + firstName,
-            display_name: dn,
-            gender,
-          });
-          localStorage.setItem(K, j.member_token);try{history.replaceState(null,'',location.pathname+'?'+SHARE_PARAM+'='+encodeURIComponent(j.member_token))}catch(_){}
-          location.reload();
-        } catch (e) {
-          msg.textContent =
-            e.message || "登録できませんでした。入力内容を確認してください";
-        }
+          const j = await call("register", {real_name:lastName + " " + firstName,display_name:dn,gender,line_url:lineUrl,password,invite_code:inviteCode});
+          localStorage.setItem(K, j.member_token);location.reload();
+        } catch (e) { msg.textContent = e.message || "登録できませんでした。入力内容を確認してください"; }
       }
-      async function recoverMember(){const ln=document.getElementById('recoverLastName').value.trim(),fn=document.getElementById('recoverFirstName').value.trim(),dn=document.getElementById('recoverDisplayName').value.trim(),msg=document.getElementById('recoverError');msg.textContent='';if(!ln||!fn||!dn){msg.textContent='姓・名・登録名を入力してください';return}try{const j=await call('member-recover',{real_name:ln+' '+fn,display_name:dn});localStorage.setItem(K,j.member_token);try{history.replaceState(null,'',location.pathname+'?'+SHARE_PARAM+'='+encodeURIComponent(j.member_token))}catch(_){}location.reload()}catch(e){msg.textContent=e.message||'復旧できませんでした'}}function toggleProfileEdit() {
+      async function recoverMember(){const ln=document.getElementById('recoverLastName').value.trim(),fn=document.getElementById('recoverFirstName').value.trim(),dn=document.getElementById('recoverDisplayName').value.trim(),line=document.getElementById('recoverLineUrl').value.trim(),password=document.getElementById('recoverPassword').value,invite=document.getElementById('inviteCode').value.trim(),msg=document.getElementById('recoverError');msg.textContent='';if(!ln||!fn||!dn||!line||password.length<8||!invite){msg.textContent='招待コード・姓・名・登録名・LINE URL・8文字以上の新しいパスワードを入力してください';return}try{const j=await call('member-recover',{real_name:ln+' '+fn,display_name:dn,line_url:line,password,invite_code:invite});localStorage.setItem(K,j.member_token);location.reload()}catch(e){msg.textContent=e.message||'復旧できませんでした'}}
+      function toggleProfileEdit() {
         document.getElementById("profileEdit")?.classList.toggle("hidden");
       }
       async function saveProfile() {
@@ -917,11 +903,12 @@
         await respond(id, cur.status);
       }
       async function boot() {
-        data = await call("bootstrap");
         await loadMe();
+        const token = localStorage.getItem(K);
+        if (!token) return;
+        data = await call("bootstrap", { member_token: token });
         const x = document.getElementById("dateSearch");
-        if (x)
-          x.min = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+        if (x) x.min = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
         render();
       }
       boot().catch(
