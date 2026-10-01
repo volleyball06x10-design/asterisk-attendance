@@ -435,9 +435,7 @@
       }
       function fullFor(e) {
         return (
-          data.responses.filter(
-            (r) => r.event_id === e.id && r.status === "yes",
-          ).length +
+          Number(data.member_counts?.[e.id] || 0) +
             Number(data.visitor_counts?.[e.id] || 0) >=
           Number(e.capacity)
         );
@@ -704,7 +702,7 @@
       }
       async function boot() {
         try {
-          data = await api("bootstrap");
+          data = await api("visitor-bootstrap");
           render();
         } catch (e) {
           events.innerHTML =
