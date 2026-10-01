@@ -248,7 +248,7 @@
         </section>
         <section class="card">
           <h2>ビジター出欠・申請者情報</h2>
-          <p class="muted">過去の日程を含む申請を表示します。月・マークを選ぶと絞り込めます。</p>
+          <p class="muted">今日以降の日程の申請を表示します。月・マークを選ぶと絞り込めます。</p>
           <div id="visitors"></div>
         </section>
         <section>
@@ -381,6 +381,7 @@
           ),
           visitorEvents = D.events.filter(
             (e) =>
+              String(e.event_date) >= today &&
               (month === "all" || String(e.event_date).startsWith(month)) &&
               (mark === "all" || String(e.title).includes(mark)),
           ),
