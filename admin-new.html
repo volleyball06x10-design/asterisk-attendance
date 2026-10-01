@@ -248,6 +248,7 @@
         </section>
         <section class="card">
           <h2>ビジター出欠・申請者情報</h2>
+          <p class="muted">過去の日程を含む申請を表示します。月・マークを選ぶと絞り込めます。</p>
           <div id="visitors"></div>
         </section>
         <section>
@@ -375,6 +376,11 @@
           es = D.events.filter(
             (e) =>
               String(e.event_date) >= today &&
+              (month === "all" || String(e.event_date).startsWith(month)) &&
+              (mark === "all" || String(e.title).includes(mark)),
+          ),
+          visitorEvents = D.events.filter(
+            (e) =>
               (month === "all" || String(e.event_date).startsWith(month)) &&
               (mark === "all" || String(e.title).includes(mark)),
           ),
@@ -529,7 +535,7 @@
             .join("") ||
           '<div class="card muted">条件に合う日程はありません。</div>';
         visitors.innerHTML =
-          es
+          visitorEvents
             .map((e) => {
               const vs = D.visitors
                   .filter((v) => v.event_id === e.id)
