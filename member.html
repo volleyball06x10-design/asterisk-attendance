@@ -536,6 +536,7 @@
         selMarks = new Set(),
         selRegions = new Set(),
         state = "all",
+        pendingYes = new Set(),
         selectedDate = "",
         openSet = new Set(),
         filtersOpen = true;
@@ -722,6 +723,24 @@
       function myState(e) {
         return mine[e.id]?.status || "unanswered";
       }
+      function timeMinutes(value) {
+        const match = String(value || "").match(/^([0-9]{1,2}):([0-9]{2})/);
+        return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+      }
+      function timesOverlap(a, b) {
+        if (String(a.event_date || "") !== String(b.event_date || "")) return false;
+        const aStart = timeMinutes(a.start_time), aEnd = timeMinutes(a.end_time);
+        const bStart = timeMinutes(b.start_time), bEnd = timeMinutes(b.end_time);
+        return aStart !== null && aEnd !== null && bStart !== null && bEnd !== null &&
+          aStart < bEnd && bStart < aEnd;
+      }
+      function conflictingParticipation(e) {
+        return (data.events || []).find((other) =>
+          other.id !== e.id &&
+          (mine[other.id]?.status === "yes" || pendingYes.has(other.id)) &&
+          timesOverlap(e, other)
+        );
+      }
       function canCancel(e) {
         const today = new Date(Date.now() + 9 * 3600000)
           .toISOString()
@@ -825,6 +844,7 @@
                   (r) => r.event_id === e.id,
                 ),
                 my = mine[e.id],
+                conflict = my?.status === "yes" ? null : conflictingParticipation(e),
                 statusLabel = {
                   yes: "参加",
                   maybe: "未定",
@@ -856,7 +876,7 @@
                     ? wl.findIndex((r) => r.display_name === myName) + 1
                     : 0,
                 op = openSet.has(e.id),lockedSep=String(e.event_date||'').startsWith('2026-09');
-                            return `<section class="event"><div class="eventHead" onclick="togEvent('${e.id}')"><span>${esc(e.event_date)} ${esc(e.day_label || "")}　${esc(e.title || "")}<br><span class="muted">📍 ${esc(e.venue)}　🕒 ${String(e.start_time || "").slice(0, 5)}-${String(e.end_time || "").slice(0, 5)}</span></span><span class="arr">${op ? "⌃" : "⌄"}</span></div><div class="eventBody ${op ? "" : "hidden"}"><div class="meta"><b>💴 参加費 ¥${Number(e.participation_fee || 400).toLocaleString()}</b><div class="capacityInfo"><span>参加確定 ${confirmedCount}/${totalCap}人</span>${vp ? `<span>申請中 ${vp}人</span>` : ""}<span>残り ${remaining}人</span></div>${full ? '<span class="full">満員</span>' : ""}</div><a class="btn calendarBtn" href="${calendarUrl(e)}" target="_blank" rel="noopener">📅 カレンダーに追加</a>${lockedSep ? `<div class="lockedMonth">🔒 9月分の新規参加受付は終了しました</div>${my?.status==="yes"?'<button class="btn yes selected" disabled>✓ 参加済み</button>':""}` : my?.status === "yes" ? `<button class="btn yes selected" disabled>✓ 参加済み</button>${canCancel(e) ? `<button type="button" class="btn cancel" onclick="cancelParticipation('${e.id}')">参加をキャンセル</button><div class="muted">練習日前日までキャンセルできます。</div>` : '<div class="muted">当日のキャンセルは代表者へ連絡してください。</div>'}` : full ? (my?.status === "waitlist" ? `<button type="button" class="btn wait selected" disabled>⏳ キャンセル待ち登録済み</button><div class="joined">現在 ${pos || wl.length}番目です</div>` : `<button type="button" class="btn wait" onclick="respond('${e.id}','waitlist')">⏳ キャンセル待ち</button>`) : `<button type="button" class="btn yes" onclick="respond('${e.id}','yes')">✓ 参加する</button>`}<label class="muted" for="g-${e.id}">一緒に参加する友人数</label><select id="g-${e.id}" ${lockedSep?"disabled":""}><option value="0" ${Number(my?.guest_count || 0) === 0 ? "selected" : ""}>友人なし</option><option value="1" ${Number(my?.guest_count || 0) === 1 ? "selected" : ""}>友人1人</option><option value="2" ${Number(my?.guest_count || 0) === 2 ? "selected" : ""}>友人2人</option><option value="3" ${Number(my?.guest_count || 0) === 3 ? "selected" : ""}>友人3人</option></select><div class="muted">本人を含めて定員枠を確保します。コメントに「友人1人」などと書いた場合も自動で反映します。</div><textarea id="c-${e.id}" placeholder="備考・コメント" ${lockedSep?"disabled":""}>${esc(my?.comment || "")}</textarea>${lockedSep?"":`<button type="button" class="btn primary" onclick="saveComment(\'${e.id}\')">コメントを保存</button>`}${answers}</div></section>`;
+                            return `<section class="event"><div class="eventHead" onclick="togEvent('${e.id}')"><span>${esc(e.event_date)} ${esc(e.day_label || "")}　${esc(e.title || "")}<br><span class="muted">📍 ${esc(e.venue)}　🕒 ${String(e.start_time || "").slice(0, 5)}-${String(e.end_time || "").slice(0, 5)}</span></span><span class="arr">${op ? "⌃" : "⌄"}</span></div><div class="eventBody ${op ? "" : "hidden"}"><div class="meta"><b>💴 参加費 ¥${Number(e.participation_fee || 400).toLocaleString()}</b><div class="capacityInfo"><span>参加確定 ${confirmedCount}/${totalCap}人</span>${vp ? `<span>申請中 ${vp}人</span>` : ""}<span>残り ${remaining}人</span></div>${full ? '<span class="full">満員</span>' : ""}</div><a class="btn calendarBtn" href="${calendarUrl(e)}" target="_blank" rel="noopener">📅 カレンダーに追加</a>${lockedSep ? `<div class="lockedMonth">🔒 9月分の新規参加受付は終了しました</div>${my?.status==="yes"?'<button class="btn yes selected" disabled>✓ 参加済み</button>':""}` : my?.status === "yes" ? `<button class="btn yes selected" disabled>✓ 参加済み</button>${canCancel(e) ? `<button type="button" class="btn cancel" onclick="cancelParticipation('${e.id}')">参加をキャンセル</button><div class="muted">練習日前日までキャンセルできます。</div>` : '<div class="muted">当日のキャンセルは代表者へ連絡してください。</div>'}` : conflict ? '<button type="button" class="btn yes" disabled>同時間帯の別活動に参加済み</button><div class="muted">同じ時間帯の「' + esc(conflict.title || conflict.venue || "活動回") + '」に参加しているため、重複する活動回には参加できません。</div>' : full ? (my?.status === "waitlist" ? `<button type="button" class="btn wait selected" disabled>⏳ キャンセル待ち登録済み</button><div class="joined">現在 ${pos || wl.length}番目です</div>` : `<button type="button" class="btn wait" onclick="respond('${e.id}','waitlist')">⏳ キャンセル待ち</button>`) : `<button type="button" class="btn yes" onclick="respond('${e.id}','yes')">✓ 参加する</button>`}<label class="muted" for="g-${e.id}">一緒に参加する友人数</label><select id="g-${e.id}" ${lockedSep?"disabled":""}><option value="0" ${Number(my?.guest_count || 0) === 0 ? "selected" : ""}>友人なし</option><option value="1" ${Number(my?.guest_count || 0) === 1 ? "selected" : ""}>友人1人</option><option value="2" ${Number(my?.guest_count || 0) === 2 ? "selected" : ""}>友人2人</option><option value="3" ${Number(my?.guest_count || 0) === 3 ? "selected" : ""}>友人3人</option></select><div class="muted">本人を含めて定員枠を確保します。コメントに「友人1人」などと書いた場合も自動で反映します。</div><textarea id="c-${e.id}" placeholder="備考・コメント" ${lockedSep?"disabled":""}>${esc(my?.comment || "")}</textarea>${lockedSep?"":`<button type="button" class="btn primary" onclick="saveComment(\'${e.id}\')">コメントを保存</button>`}${answers}</div></section>`;
             })
             .join("") ||
           '<div class="box">条件に一致する日程はありません。</div>';
@@ -877,6 +897,15 @@
       async function respond(id, status) {
         const t = localStorage.getItem(K);
         if (!t) return alert("先にメンバー登録してください");
+        const event = (data.events || []).find((e) => e.id === id);
+        if (status === "yes" && event) {
+          const conflict = conflictingParticipation(event);
+          if (conflict) {
+            return alert("同じ日・時間帯の「" + (conflict.title || conflict.venue || "活動回") + "」に参加中、または申請処理中のため、この活動回には参加できません。");
+          }
+          pendingYes.add(id);
+          render();
+        }
         const comment = document.getElementById("c-" + id)?.value || "";
         let guest_count = Number(
           document.getElementById("g-" + id)?.value || 0,
@@ -904,6 +933,11 @@
           await boot();
         } catch (e) {
           alert(e.message);
+        } finally {
+          if (status === "yes") {
+            pendingYes.delete(id);
+            render();
+          }
         }
       }
       async function cancelParticipation(id) {
