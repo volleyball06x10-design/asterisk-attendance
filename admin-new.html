@@ -528,7 +528,7 @@
                       '" placeholder="コメントを修正"><button class="btn primary" onclick="saveResponse(\'' +
                       r.id +
                       "')\">出欠変更</button>" +
-                      (r.status === "yes"
+                      (r.status === "yes" || r.status === "waitlist"
                         ? '<details><summary class="btn">🔄 同日の別回へ変更</summary><select id="rm-' +
                           r.id +
                           '"><option value="">変更先を選択</option>' +
