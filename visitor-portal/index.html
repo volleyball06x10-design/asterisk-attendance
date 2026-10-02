@@ -362,7 +362,7 @@
         const rules = [
           [
             "世田谷区",
-            ["世田谷", "北沢", "希望丘", "宮坂", "武蔵丘", "光明学園"],
+            ["世田谷", "北沢", "希望丘", "宮坂", "武蔵丘", "光明学園", "大蔵第二"],
           ],
           ["杉並区", ["杉並", "永福", "西荻", "高井戸"]],
           [
@@ -556,7 +556,9 @@
       }
       function render() {
         const future = data.events.filter(
-            (e) => String(e.event_date) >= todayJP(),
+            (e) =>
+              String(e.event_date) >= todayJP() &&
+              regionOf(e.venue) !== "世田谷区",
           ),
           ms = [...new Set(future.map((e) => e.event_date.slice(0, 7)))].sort(),
           rg = [...new Set(future.map((e) => regionOf(e.venue)))].sort();
