@@ -904,7 +904,6 @@
             return alert("同じ日・時間帯の「" + (conflict.title || conflict.venue || "活動回") + "」に参加中、または申請処理中のため、この活動回には参加できません。");
           }
           pendingYes.add(id);
-          render();
         }
         const comment = document.getElementById("c-" + id)?.value || "";
         let guest_count = Number(
@@ -921,6 +920,7 @@
             );
           }
         }
+        if (status === "yes") render();
         try {
           await call("respond", {
             member_token: t,
