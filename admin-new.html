@@ -527,7 +527,43 @@
                       esc(r.comment || "") +
                       '" placeholder="コメントを修正"><button class="btn primary" onclick="saveResponse(\'' +
                       r.id +
-                      "')\">出欠変更</button></div>",
+                      "')\">出欠変更</button>" +
+                      (r.status === "yes"
+                        ? '<details><summary class="btn">🔄 同日の別回へ変更</summary><select id="rm-' +
+                          r.id +
+                          '"><option value="">変更先を選択</option>' +
+                          D.events
+                            .filter(
+                              (x) =>
+                                x.id !== e.id &&
+                                String(x.event_date) === String(e.event_date) &&
+                                !x.is_hidden,
+                            )
+                            .sort((a, b) =>
+                              String(a.start_time).localeCompare(
+                                String(b.start_time),
+                              ),
+                            )
+                            .map(
+                              (x) =>
+                                '<option value="' +
+                                x.id +
+                                '">' +
+                                String(x.start_time || "").slice(0, 5) +
+                                "-" +
+                                String(x.end_time || "").slice(0, 5) +
+                                "｜" +
+                                esc(x.venue) +
+                                "｜" +
+                                esc(x.title || "") +
+                                "</option>",
+                            )
+                            .join("") +
+                          '</select><button class="btn primary" onclick="moveResponse(\'' +
+                          r.id +
+                          '\')">この回へ変更</button></details>'
+                        : "") +
+                      '</div>',
                   )
                   .join("") +
                 "</details></section>"
@@ -805,6 +841,19 @@
           });
           await load();
           alert("出欠を変更しました");
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+      async function moveResponse(id) {
+        const s = document.getElementById("rm-" + id);
+        if (!s || !s.value)
+          return alert("同日に変更できる別の練習回がありません");
+        if (!confirm("この正規メンバーの参加を選択した練習回へ変更しますか？")) return;
+        try {
+          await call("admin-move-response", { pin: P, id, event_id: s.value });
+          await load();
+          alert("練習回を変更しました");
         } catch (e) {
           alert(e.message);
         }
