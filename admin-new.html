@@ -6,6 +6,8 @@
     <title>ASTERISK 管理</title>
     <style>
       body {
+        font-size: 16px;
+        line-height: 1.55;
         font-family:
           system-ui,
           -apple-system,
@@ -37,8 +39,10 @@
       select {
         width: 100%;
         box-sizing: border-box;
-        padding: 9px;
-        border: 1px solid #dfe5ef;
+        min-height: 46px;
+        font: inherit;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
         border-radius: 9px;
         margin: 4px 0;
       }
@@ -46,7 +50,9 @@
         display: inline-block;
         border: 0;
         border-radius: 9px;
-        padding: 9px 12px;
+        min-height: 46px;
+        padding: 10px 14px;
+        font-size: 15px;
         font-weight: 800;
         cursor: pointer;
         margin: 3px;
@@ -71,6 +77,7 @@
         color: #0b6b3a;
       }
       .muted {
+        line-height: 1.5;
         color: #70798b;
         font-size: 13px;
       }
@@ -101,6 +108,8 @@
         margin: 12px 0;
       }
       .count {
+        min-width: 0;
+        line-height: 1.45;
         background: #f7f9fc;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
@@ -110,7 +119,7 @@
       }
       .count b {
         display: block;
-        font-size: 24px;
+        font-size: 28px;
         margin-top: 3px;
       }
       .eventGroup {
@@ -179,6 +188,47 @@
         padding: 6px 0;
         border-bottom: 1px solid #eee;
       }
+      .event-edit {
+        margin: 16px 0 4px;
+        border: 1px solid #dbe3ef;
+        border-radius: 12px;
+        background: #f8faff;
+      }
+      .event-edit > summary,
+      .bulk-edit > summary {
+        min-height: 46px;
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 800;
+        color: #203a78;
+      }
+      .event-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        padding: 0 12px 14px;
+      }
+      .event-form label {
+        display: grid;
+        gap: 2px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #334155;
+      }
+      .event-form .wide,
+      .event-form .form-actions { grid-column: 1 / -1; }
+      .event-form textarea { min-height: 90px; }
+      .event-form .form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+      .event-edit[open] > summary,
+      .bulk-edit[open] > summary { border-bottom: 1px solid #dbe3ef; }
+      .bulk-edit > summary { list-style: none; }
+      .bulk-edit > summary::-webkit-details-marker { display: none; }
+      .bulk-edit > summary::before,
+      .event-edit > summary::before { content: "+"; margin-right: 10px; font-size: 20px; }
+      .event-edit[open] > summary::before,
+      .bulk-edit[open] > summary::before { content: "−"; }
       .tabs {
         display: flex;
         gap: 7px;
@@ -198,9 +248,18 @@
         color: #fff;
       }
       @media (max-width: 700px) {
-        .grid {
-          grid-template-columns: 1fr 1fr;
-        }
+        main { padding: 14px 10px; }
+        .card { padding: 14px; border-radius: 14px; }
+        .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .counts .count:last-child:nth-child(3) { grid-column: 1 / -1; }
+        .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .eventTitle { font-size: 16px; }
+      }
+      @media (max-width: 420px) {
+        .event-form, .grid { grid-template-columns: 1fr; }
+        .counts { grid-template-columns: 1fr; }
+        .counts .count:last-child:nth-child(3) { grid-column: auto; }
+        h1 { font-size: 24px; }
       }
     </style>
   </head>
@@ -217,7 +276,8 @@
       </section>
       <div id="app" hidden>
         <section class="card">
-          <h2>一括追加・一括更新</h2>
+          <details class="bulk-edit">
+            <summary>日程を一括追加・更新</summary>
           <p class="muted">
             1行につき「日付,曜日,開始,終了,レベル/タイトル,会場,定員,参加費」の順で入力してください。
           </p>
@@ -227,6 +287,7 @@
             placeholder="2026-09-12,土,18:00,21:00,🌸,練馬特別支援,20,400"
           ></textarea
           ><button class="btn primary" onclick="bulkSave()">一括反映</button>
+          </details>
         </section>
         <div id="months" class="tabs"></div>
         <div id="marks" class="tabs"></div>
@@ -433,53 +494,53 @@
                 participating +
                 '人</b><span class="muted">正規・友人・承認済ビジター</span></div><div class="count">残り枠<b>' +
                 Math.max(0, Number(e.capacity || 20) - participating) +
-                '人</b></div></div><div class="grid"><input id="d-' +
+                '人</b></div></div><details class="event-edit"><summary>日程・定員・参加費を編集</summary><div class="event-form"><label>開催日<input id="d-' +
                 e.id +
                 '" type="date" value="' +
                 esc(e.event_date) +
-                '"><input id="w-' +
+                '"></label><label>曜日<input id="w-' +
                 e.id +
                 '" value="' +
                 esc(e.day_label || "") +
-                '"><input id="s-' +
+                '"></label><label>開始<input id="s-' +
                 e.id +
                 '" type="time" value="' +
                 String(e.start_time).slice(0, 5) +
-                '"><input id="x-' +
+                '"></label><label>終了<input id="x-' +
                 e.id +
                 '" type="time" value="' +
                 String(e.end_time).slice(0, 5) +
-                '"><input id="t-' +
+                '"></label><label>レベル・タイトル<input id="t-' +
                 e.id +
                 '" value="' +
                 esc(e.title) +
-                '"><input id="v-' +
+                '"></label><label>会場<input id="v-' +
                 e.id +
                 '" value="' +
                 esc(e.venue) +
-                '"><input id="cap-' +
+                '"></label><label>定員<input id="cap-' +
                 e.id +
                 '" type="number" value="' +
                 e.capacity +
-                '"><input id="fee-' +
+                '"></label><label>参加費<input id="fee-' +
                 e.id +
                 '" type="number" value="' +
                 Number(e.participation_fee || 400) +
-                '"></div><textarea id="n-' +
+                '"></label></div><label class="wide">メモ<textarea id="n-' +
                 e.id +
                 '">' +
                 esc(e.note || "") +
-                '</textarea><select id="h-' +
+                '</textarea></label><label>表示設定<select id="h-' +
                 e.id +
                 '"><option value="false" ' +
                 (!e.is_hidden ? "selected" : "") +
                 '>表示</option><option value="true" ' +
                 (e.is_hidden ? "selected" : "") +
-                '>非表示</option></select><button class="btn primary" onclick="saveEvent(\'' +
+                '>非表示</option></select></label><div class="form-actions"><button class="btn primary" onclick="saveEvent(\'' +
                 e.id +
                 '\')">保存</button><button class="btn danger" onclick="delEvent(\'' +
                 e.id +
-                "')\">削除</button>" +
+                "')\">削除</button></div></details>" +
                 '<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:900;padding:10px 0">👥 参加メンバー（' +
                 rs.length +
                 "名）</summary>" +
@@ -589,7 +650,7 @@
                   .reduce((n, v) => n + 1 + Number(v.guest_count || 0), 0);
               if (!vs.length) return "";
               return (
-                '<details class="eventGroup" open><summary class="eventHead"><div class="eventTitle">📅 ' +
+                '<details class="eventGroup"><summary class="eventHead"><div class="eventTitle">📅 ' +
                 eventLine(e) +
                 "<br>🏐 " +
                 esc(e.title || "") +
