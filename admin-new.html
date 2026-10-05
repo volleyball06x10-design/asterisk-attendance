@@ -188,6 +188,25 @@
         padding: 6px 0;
         border-bottom: 1px solid #eee;
       }
+      .event-applications {
+        margin: 14px 0 4px;
+        border: 1px solid #f0d8a7;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fffdf7;
+      }
+      .event-applications > summary {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 800;
+        color: #765000;
+        background: #fff7e6;
+      }
+      .event-applications[open] > summary { border-bottom: 1px solid #f0d8a7; }
+      .application-slot .visitorBody { padding: 8px 12px 14px; }
       .roster {
         margin: 14px 0 4px;
         border: 1px solid #dbe3ef;
@@ -348,11 +367,7 @@
             </details>
           </details>
         </section>
-        <section class="card">
-          <h2>ビジター出欠・申請者情報</h2>
-          <p class="muted">今日以降の日程の申請を表示します。月・マークを選ぶと絞り込めます。</p>
-          <div id="visitors"></div>
-        </section>
+        <div id="visitors" hidden></div>
         <section>
           <h2>各回ごとの変更</h2>
           <div id="eventList"></div>
@@ -548,7 +563,7 @@
                   }),
                 ].join("") || '<div class="muted" style="padding:10px 2px">参加申請はありません。</div>';
               return (
-                '<section class="card"><h2>' +
+                '<section class="card event-card" data-event-id="' + e.id + '"><h2>' +
                 esc(e.event_date) +
                 " " +
                 esc(e.day_label || "") +
@@ -568,7 +583,9 @@
                 participating +
                 '人</b><span class="muted">正規・友人・承認済ビジター</span></div><div class="count">残り枠<b>' +
                 Math.max(0, Number(e.capacity || 20) - participating) +
-                '人</b></div></div><details class="roster"><summary>参加者一覧（正規 ' + activeRegulars.length + '件・ビジター ' + activeVisitors.length + '件）</summary><div class="roster-body">' + rosterRows + '</div></details><details class="event-edit"><summary>日程・定員・参加費を編集</summary><div class="event-form"><label>開催日<input id="d-' +
+                '人</b></div></div><details class="roster"><summary>参加者一覧（正規 ' + activeRegulars.length + '件・ビジター ' + activeVisitors.length + '件）</summary><div class="roster-body">' + rosterRows + '</div></details>' +
+                (vs.length ? '<details class="event-applications"><summary>ビジター申請を管理（承認待ち ' + visitorPending + '人・参加確定 ' + visitorApproved + '人）</summary><div class="application-slot"></div></details>' : '') +
+                '<details class="event-edit"><summary>日程・定員・参加費を編集</summary><div class="event-form"><label>開催日<input id="d-' +
                 e.id +
                 '" type="date" value="' +
                 esc(e.event_date) +
@@ -724,17 +741,9 @@
                   .reduce((n, v) => n + 1 + Number(v.guest_count || 0), 0);
               if (!vs.length) return "";
               return (
-                '<details class="eventGroup"><summary class="eventHead"><div class="eventTitle">📅 ' +
-                eventLine(e) +
-                "<br>🏐 " +
-                esc(e.title || "") +
-                '</div><div class="sectionHint">この日程のビジター申請</div><div class="counts"><div class="count">ビジター申請<b>' +
+                '<div class="visitorBody" data-event-id="' + e.id + '"><div class="sectionHint">ビジター申請者（' +
                 vs.length +
-                '件</b></div><div class="count">ビジター参加確定<b>' +
-                approved +
-                '人</b></div><div class="count">承認待ち<b>' +
-                pending +
-                '人</b></div></div></summary><div class="visitorBody">' +
+                '件・参加確定 ' + approved + '人・承認待ち ' + pending + '人）</div>' +
                 vs
                   .map((v) => {
                     const line = String(v.line_url || "").trim(),
@@ -750,10 +759,6 @@
                       (Number(v.guest_count || 0) > 0
                         ? " ＋ 同伴" + Number(v.guest_count || 0) + "人"
                         : "") +
-                      '</div><div class="eventMeta">📅 申請日程：' +
-                      eventLine(e) +
-                      "<br>🏐 " +
-                      esc(e.title || "") +
                       '</div><div class="statusline">' +
                       (v.status === "approved"
                         ? '<span style="background:#dff7e8;color:#08733f;padding:6px 10px;border-radius:999px">✅ 参加確定済み</span>'
@@ -877,10 +882,17 @@
                     );
                   })
                   .join("") +
-                "</div></details>"
+                "</div>"
               );
             })
             .join("") || '<div class="muted">該当する申請はありません。</div>';
+        document.querySelectorAll("#visitors .visitorBody[data-event-id]").forEach((body) => {
+          const card = Array.from(document.querySelectorAll(".event-card")).find(
+            (item) => item.dataset.eventId === body.dataset.eventId,
+          );
+          const slot = card && card.querySelector(".application-slot");
+          if (slot) slot.appendChild(body);
+        });
         const allMembers = D.members || [],
           maleCount = allMembers.filter((m) => m.gender === "男性").length,
           femaleCount = allMembers.filter((m) => m.gender === "女性").length,
