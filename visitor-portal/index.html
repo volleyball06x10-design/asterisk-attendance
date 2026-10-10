@@ -272,7 +272,7 @@
         <section class="box notice">
           <b>⚠️ キャンセル</b>
           <p>
-            当日は必ず連絡。開始3時間前を過ぎた直前キャンセル・ドタキャンはキャンセル料がかかります。承認後は代表者へ連絡してください。
+            承認待ち・参加確定のどちらも前日23:59まで本人がキャンセルできます。当日は代表者へ必ず連絡してください。開始3時間前を過ぎた直前キャンセル・ドタキャンはキャンセル料がかかります。
           </p>
         </section>
         <section class="box notice">
@@ -493,8 +493,8 @@
               .map((a) => {
                 const v = a.visitor || {};
                 const cancelButton =
-                  v.status === "pending" && a.token
-                    ? '<button class="btn danger" onclick="cancelApp(&#39;' + esc(a.token) + '&#39;)">申請を解除</button>'
+                  ["pending", "approved"].includes(v.status) && a.event?.event_date > todayJP() && (a.token || a.lookupAuth)
+                    ? '<button class="btn danger" onclick="cancelApp(&#39;' + esc(v.id) + '&#39;)">キャンセルする</button>'
                     : "";
                 return (
                   '<div class="application"><b>📅 ' +
@@ -513,6 +513,7 @@
                   esc(v.comment || "なし") +
                   "</div>" +
                   cancelButton +
+                  (["pending", "approved"].includes(v.status) && a.event?.event_date <= todayJP() ? '<p class="muted">本人によるキャンセルは前日までです。当日は代表者へ連絡してください。</p>' : "") +
                   "</div>"
                 );
               })
@@ -532,7 +533,7 @@
         message.textContent = "申請状況を確認しています…";
         try {
           const result = await api("visitor-lookup", { display_name, contact });
-          lookupApps = result.applications || [];
+          lookupApps = (result.applications || []).map((a) => ({ ...a, lookupAuth: { display_name, contact } }));
           renderApps();
           message.textContent = lookupApps.length
             ? "申請状況を表示しました。"
@@ -544,10 +545,20 @@
             "確認できませんでした。登録名と申請時のLINE情報をご確認ください。";
         }
       }
-      async function cancelApp(token) {
-        if (!confirm("この申請を解除しますか？")) return;
+      async function cancelApp(id) {
+        const application = [...apps, ...lookupApps].find((a) => a.visitor?.id === id);
+        if (!application) return;
+        if (!confirm("この申請をキャンセルしますか？友人同伴分もキャンセルされます。")) return;
         try {
-          await api("visitor-cancel", { visitor_token: token });
+          const auth = application.token
+            ? { visitor_token: application.token }
+            : { visitor_id: id, ...application.lookupAuth };
+          await api("visitor-cancel", auth);
+          const lookupAuth = lookupApps.find((a) => a.lookupAuth)?.lookupAuth;
+          if (lookupAuth) {
+            const result = await api("visitor-lookup", lookupAuth);
+            lookupApps = (result.applications || []).map((a) => ({ ...a, lookupAuth }));
+          }
           await loadApps();
           await boot();
         } catch (e) {
