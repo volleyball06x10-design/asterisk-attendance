@@ -459,6 +459,35 @@
           }[s] || s
         );
       }
+      function timeMinutes(value) {
+        const match = String(value || "").match(/^([0-9]{1,2}):([0-9]{2})/);
+        return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+      }
+      function timesOverlap(a, b) {
+        if (String(a?.event_date || "") !== String(b?.event_date || "")) return false;
+        const aStart = timeMinutes(a?.start_time), aEnd = timeMinutes(a?.end_time);
+        const bStart = timeMinutes(b?.start_time), bEnd = timeMinutes(b?.end_time);
+        return aStart !== null && aEnd !== null && bStart !== null && bEnd !== null &&
+          aStart < bEnd && bStart < aEnd;
+      }
+      function activeApplication(a) {
+        return ["pending", "approved", "waitlist"].includes(
+          String(a?.visitor?.status || "").toLowerCase()
+        );
+      }
+      function normalizedContact(value) {
+        return String(value || "").trim().toLowerCase().replace(/\/+$/, "");
+      }
+      function conflictingApplication(event, contact, list = apps) {
+        const identity = normalizedContact(contact);
+        if (!identity || !event) return null;
+        return list.find((a) =>
+          a?.event?.id !== event.id &&
+          activeApplication(a) &&
+          normalizedContact(a?.visitor?.contact) === identity &&
+          timesOverlap(event, a.event)
+        );
+      }
       function eventLine(e) {
         if (!e) return "";
         return (
@@ -482,6 +511,7 @@
           } catch {}
         }
         renderApps();
+        render();
       }
       function renderApps() {
         const applications = document.getElementById("applications");
@@ -623,7 +653,11 @@
           es
             .map((e) => {
               const full = fullFor(e),
-                p = profile();
+                p = profile(),
+                conflict = conflictingApplication(e, p.contact),
+                conflictLabel = conflict
+                  ? esc(conflict.event?.title || conflict.event?.venue || "活動回")
+                  : "";
               return (
                 '<section class="card"><h2>' +
                 esc(e.event_date) +
@@ -646,13 +680,17 @@
                 '">' +
                 (full ? "満員御礼" : "受付中") +
                 "</span></span></div>" +
-                (full
-                  ? '<p class="muted">この日程は満員です。空きが出た場合に備えてキャンセル待ち申請ができます。</p><button class="btn primary" onclick="toggleForm(\'' +
-                    e.id +
-                    "')\">キャンセル待ち申請する</button>"
-                  : '<button class="btn primary" onclick="toggleForm(\'' +
-                    e.id +
-                    "')\">この日程に申請する</button>") +
+                (conflict
+                  ? '<button class="btn secondary" disabled>同時間帯の別日程に申請中</button><p class="muted">同じ日・重複する時間帯の「' +
+                    conflictLabel +
+                    '」に申請中または参加確定のため、この日程には申請できません。先の申請をキャンセルすると申請できます。</p>'
+                  : full
+                    ? '<p class="muted">この日程は満員です。空きが出た場合に備えてキャンセル待ち申請ができます。</p><button class="btn primary" onclick="toggleForm(\'' +
+                      e.id +
+                      "')\">キャンセル待ち申請する</button>"
+                    : '<button class="btn primary" onclick="toggleForm(\'' +
+                      e.id +
+                      "')\">この日程に申請する</button>") +
                 '<div id="form-' +
                 e.id +
                 '" class="applybox hidden"><div class="desired">📅 参加希望日：' +
@@ -737,6 +775,23 @@
             "名前・性別・年齢・バレー歴・希望ポジション・LINE URLを入力してください",
           );
         try {
+          const event = data.events.find((item) => item.id === id);
+          const lookup = await api("visitor-lookup", {
+            display_name: p.display_name,
+            contact: p.contact,
+          });
+          const conflict = conflictingApplication(
+            event,
+            p.contact,
+            lookup.applications || []
+          );
+          if (conflict) {
+            return alert(
+              "同じ日・時間帯の「" +
+                (conflict.event?.title || conflict.event?.venue || "活動回") +
+                "」に申請中、または参加確定のため、この日程には申請できません。"
+            );
+          }
           const r = await fetch(APPLY, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
