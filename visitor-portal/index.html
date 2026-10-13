@@ -395,7 +395,11 @@
             body: b ? JSON.stringify(b) : undefined,
           }),
           j = await r.json();
-        if (!r.ok) throw Error(j.error || "通信エラー");
+        if (!r.ok) {
+          const error = Error(j.error || "通信エラー");
+          error.status = r.status;
+          throw error;
+        }
         return j;
       }
       function getTokens() {
@@ -776,14 +780,27 @@
           );
         try {
           const event = data.events.find((item) => item.id === id);
-          const lookup = await api("visitor-lookup", {
-            display_name: p.display_name,
-            contact: p.contact,
-          });
+          let previousApplications = [];
+          try {
+            const lookup = await api("visitor-lookup", {
+              display_name: p.display_name,
+              contact: p.contact,
+            });
+            previousApplications = lookup.applications || [];
+          } catch (error) {
+            // A first-time applicant has no visitor record yet. The lookup API
+            // returns this specific 404 for that case, so continue as no prior applications.
+            if (
+              error.status !== 404 ||
+              error.message !== "登録情報が見つかりません"
+            ) {
+              throw error;
+            }
+          }
           const conflict = conflictingApplication(
             event,
             p.contact,
-            lookup.applications || []
+            previousApplications
           );
           if (conflict) {
             return alert(
