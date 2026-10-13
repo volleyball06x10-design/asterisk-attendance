@@ -737,7 +737,9 @@
       function conflictingParticipation(e) {
         return (data.events || []).find((other) =>
           other.id !== e.id &&
-          (mine[other.id]?.status === "yes" || pendingYes.has(other.id)) &&
+          (mine[other.id]?.status === "yes" ||
+            mine[other.id]?.status === "waitlist" ||
+            pendingYes.has(other.id)) &&
           timesOverlap(e, other)
         );
       }
