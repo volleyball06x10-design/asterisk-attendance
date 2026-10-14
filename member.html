@@ -857,7 +857,7 @@
                   (r) => r.event_id === e.id,
                 ),
                 my = mine[e.id],
-                conflict = my?.status === "yes" ? null : conflictingParticipation(e),
+                conflict = my?.status === "yes" || my?.status === "waitlist" ? null : conflictingParticipation(e),
                 statusLabel = {
                   yes: "参加",
                   maybe: "未定",
