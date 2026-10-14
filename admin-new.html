@@ -959,7 +959,9 @@
                 esc(m.real_name || "") +
                 " ／ 性別：" +
                 esc(m.gender || "未設定") +
-                "</div></div>",
+                '</div><button class="btn warn" onclick="resetMemberPassword(\'' +
+                esc(m.id) +
+                "')\">パスワードをリセット</button></div>",
             )
             .join("") || '<div class="muted">登録メンバーはいません。</div>';
         history.innerHTML =
@@ -978,6 +980,15 @@
             )
             .join("") || '<div class="muted">履歴はありません。</div>';
         restoreAdminView(view);
+      }
+      async function resetMemberPassword(id) {
+        if (!confirm("本人確認をしたうえで、このメンバーのパスワードをリセットしますか？\nログイン中の端末はすべてログアウトされます。")) return;
+        try {
+          const result = await call("admin-reset-member-password", { pin: P, id });
+          prompt("この一時パスワードを対象の方へ個別に伝えてください。本人がログインすると新しいパスワード設定が必要になります。", result.temporary_password);
+        } catch (e) {
+          alert(e.message || "リセットできませんでした");
+        }
       }
       async function deleteHistory(id) {
         if (!confirm("この履歴を削除しますか？")) return;
