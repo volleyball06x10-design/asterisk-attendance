@@ -527,7 +527,7 @@
               .map((a) => {
                 const v = a.visitor || {};
                 const cancelButton =
-                  (["pending", "approved", "waitlist"].includes(v.status) || v.waitlist) && a.event?.event_date > todayJP() && (a.token || a.lookupAuth)
+                  (["pending", "approved", "waitlist"].includes(v.status) || v.waitlist) && ((v.waitlist || v.status === "waitlist") ? a.event?.event_date >= todayJP() : a.event?.event_date > todayJP()) && (a.token || a.lookupAuth)
                     ? '<button class="btn danger" onclick="cancelApp(&#39;' + esc(v.id) + '&#39;)">' + ((v.waitlist || v.status === "waitlist") ? "キャンセル待ちを解除" : "キャンセルする") + '</button>'
                     : "";
                 return (
