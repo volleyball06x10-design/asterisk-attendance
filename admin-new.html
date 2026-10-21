@@ -366,6 +366,9 @@
               >
                 📋 メンバー一覧を表示
               </summary>
+              <label for="memberSearch">🔎 メンバー検索（本名・登録名）</label>
+              <input id="memberSearch" type="search" placeholder="名前の一部を入力" oninput="renderMembers()" autocomplete="off">
+              <div id="memberSearchCount" class="muted" role="status" aria-live="polite"></div>
               <div id="members"></div>
             </details>
           </details>
@@ -960,21 +963,7 @@
           '人</b></div><div class="count">未設定<b>' +
           unsetCount +
           "人</b></div>";
-        document.getElementById("members").innerHTML =
-          allMembers
-            .map(
-              (m) =>
-                '<div class="person"><b>' +
-                esc(m.display_name || "") +
-                '</b><div class="muted">本名：' +
-                esc(m.real_name || "") +
-                " ／ 性別：" +
-                esc(m.gender || "未設定") +
-                '</div>' + memberLine(m) + '<button class="btn warn" onclick="resetMemberPassword(\'' +
-                esc(m.id) +
-                "')\">パスワードをリセット</button></div>",
-            )
-            .join("") || '<div class="muted">登録メンバーはいません。</div>';
+        renderMembers();
         history.innerHTML =
           (D.history || [])
             .map(
@@ -991,6 +980,35 @@
             )
             .join("") || '<div class="muted">履歴はありません。</div>';
         restoreAdminView(view);
+      }
+      function normalizeMemberSearch(value) {
+        return String(value || "").normalize("NFKC").toLowerCase()
+          .replace(/[\u30a1-\u30f6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+          .replace(/\s+/g, "");
+      }
+      function renderMembers() {
+        const allMembers = D.members || [];
+        const query = normalizeMemberSearch(document.getElementById("memberSearch").value);
+        const matchedMembers = allMembers.filter((m) =>
+          [m.real_name, m.display_name].some((name) => normalizeMemberSearch(name).includes(query))
+        );
+        document.getElementById("memberSearchCount").textContent =
+          "表示 " + matchedMembers.length + "人 ／ 全" + allMembers.length + "人";
+        document.getElementById("members").innerHTML =
+          matchedMembers
+            .map(
+              (m) =>
+                '<div class="person"><b>' +
+                esc(m.display_name || "") +
+                '</b><div class="muted">本名：' +
+                esc(m.real_name || "") +
+                " ／ 性別：" +
+                esc(m.gender || "未設定") +
+                '</div>' + memberLine(m) + '<button class="btn warn" onclick="resetMemberPassword(\'' +
+                esc(m.id) +
+                "')\">パスワードをリセット</button></div>",
+            )
+            .join("") || '<div class="muted">' + (allMembers.length ? '該当するメンバーはいません。' : '登録メンバーはいません。') + '</div>';
       }
       async function resetMemberPassword(id) {
         if (!confirm("本人確認をしたうえで、このメンバーのパスワードをリセットしますか？\nログイン中の端末はすべてログアウトされます。")) return;
