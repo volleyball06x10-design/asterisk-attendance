@@ -1004,11 +1004,25 @@
                 esc(m.real_name || "") +
                 " ／ 性別：" +
                 esc(m.gender || "未設定") +
-                '</div>' + memberLine(m) + '<button class="btn warn" onclick="resetMemberPassword(\'' +
+                '</div>' + memberLine(m) + '<div style="margin:8px 0"><label>LINE URL登録・変更（本人確認後）</label><input id="line-' + esc(m.id) + '" type="url" placeholder="https://line.me/..." value="' + esc(m.line_url || "") + '"><button class="btn primary" onclick="saveMemberLine(\'' + esc(m.id) + '\')">LINE URLを保存</button></div><button class="btn warn" onclick="resetMemberPassword(\'' +
                 esc(m.id) +
                 "')\">パスワードをリセット</button></div>",
             )
             .join("") || '<div class="muted">' + (allMembers.length ? '該当するメンバーはいません。' : '登録メンバーはいません。') + '</div>';
+      }
+      async function saveMemberLine(id) {
+        const field = document.getElementById("line-" + id);
+        const line_url = (field?.value || "").trim();
+        try {
+          const u = new URL(line_url);
+          if (u.protocol !== "https:" || u.hostname !== "line.me" || u.pathname === "/") throw Error("invalid");
+        } catch { alert("https://line.me/ から始まる正しいLINE URLを入力してください"); return; }
+        if (!confirm("本人確認済みのメンバーのLINE URLを保存しますか？")) return;
+        try {
+          await call("admin-set-member-line", { pin: P, id, line_url });
+          alert("LINE URLを保存しました");
+          await load();
+        } catch(e) { alert("保存できませんでした：" + (e.message || "サーバー側の対応を確認してください")); }
       }
       async function resetMemberPassword(id) {
         if (!confirm("本人確認をしたうえで、このメンバーのパスワードをリセットしますか？\nログイン中の端末はすべてログアウトされます。")) return;
