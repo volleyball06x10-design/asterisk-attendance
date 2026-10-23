@@ -406,7 +406,7 @@
         );
       function memberLine(member) {
         const line = String(member?.line_url || "").trim();
-        if (!line) return '<span class="muted">LINE：未登録</span>';
+        if (!line) return '<span class="muted" style="color:#b42318;font-weight:800">LINE：未登録（この状態ではパスワードをリセットしてもログインできません。本人確認後にLINE URLの登録が必要です）</span>';
         const label = '<div class="muted" style="overflow-wrap:anywhere">LINE：' + esc(line) + '</div>';
         return label + (/^https:\/\/line\.me\//i.test(line)
           ? '<a class="btn line" href="' + esc(line) + '" target="_blank" rel="noopener noreferrer">📱 LINEを開く</a>'
