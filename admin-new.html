@@ -338,6 +338,7 @@
         </button>
       </section>
       <div id="app" hidden>
+        <section id="passwordResetResult" class="card" hidden aria-live="polite"></section>
         <section class="card">
           <details class="bulk-edit">
             <summary>日程を一括追加・更新</summary>
@@ -1028,9 +1029,30 @@
         if (!confirm("本人確認をしたうえで、このメンバーのパスワードをリセットしますか？\nログイン中の端末はすべてログアウトされます。")) return;
         try {
           const result = await call("admin-reset-member-password", { pin: P, id });
-          prompt("この一時パスワードを対象の方へ個別に伝えてください。本人がログインすると新しいパスワード設定が必要になります。", result.temporary_password);
+          const panel = document.getElementById("passwordResetResult");
+          panel.hidden = false;
+          panel.innerHTML =
+            '<b>一時パスワード（対象の方へ個別に伝えてください）</b>' +
+            '<input id="temporaryPasswordValue" type="text" readonly value="' +
+            esc(result.temporary_password || "") +
+            '" aria-label="一時パスワード">' +
+            '<button type="button" class="btn primary" onclick="copyTemporaryPassword()">一時パスワードをコピー</button>' +
+            '<p class="muted">本人がログインすると、新しいパスワードの設定が必要です。画面を閉じる前に控えてください。</p>';
+          panel.scrollIntoView({ behavior: "smooth", block: "center" });
         } catch (e) {
           alert(e.message || "リセットできませんでした");
+        }
+      }
+      async function copyTemporaryPassword() {
+        const field = document.getElementById("temporaryPasswordValue");
+        if (!field) return;
+        field.focus();
+        field.select();
+        try {
+          await navigator.clipboard.writeText(field.value);
+          alert("一時パスワードをコピーしました");
+        } catch (e) {
+          alert("一時パスワードを選択しました。コピーしてください。");
         }
       }
       async function deleteHistory(id) {
