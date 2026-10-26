@@ -835,6 +835,12 @@
       async function boot() {
         try {
           data = await api("visitor-bootstrap");
+        // Normalize legacy tournament markers for Nov 2026 through Jan 2027 in the UI.
+        if (Array.isArray(data.events)) data.events.forEach(e => {
+          if (/^2026-(11|12)-|^2027-01-/.test(String(e.event_date || "")) && typeof e.title === "string") {
+            e.title = e.title.replace(/🔯/g, "✡️");
+          }
+        });
           render();
         } catch (e) {
           events.innerHTML =
