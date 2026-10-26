@@ -443,6 +443,12 @@
       }
       async function load() {
         D = await call("admin-bootstrap", { pin: P });
+        // Normalize legacy tournament markers for Nov 2026 through Jan 2027 in the UI.
+        if (Array.isArray(D.events)) D.events.forEach(e => {
+          if (/^2026-(11|12)-|^2027-01-/.test(String(e.event_date || "")) && typeof e.title === "string") {
+            e.title = e.title.replace(/🔯/g, "✡️");
+          }
+        });
         D.responses = (D.responses || []).map(function (r) {
           var m = r.attendance_members || {};
           return Object.assign({}, r, {
