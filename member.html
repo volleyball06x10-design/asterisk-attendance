@@ -978,6 +978,12 @@
         const token = localStorage.getItem(K);
         if (!token) return;
         data = await call("bootstrap", { member_token: token });
+        // Normalize legacy tournament markers for Nov 2026 through Jan 2027 in the UI.
+        if (Array.isArray(data.events)) data.events.forEach(e => {
+          if (/^2026-(11|12)-|^2027-01-/.test(String(e.event_date || "")) && typeof e.title === "string") {
+            e.title = e.title.replace(/🔯/g, "✡️");
+          }
+        });
         const x = document.getElementById("dateSearch");
         if (x) x.min = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
         render();
