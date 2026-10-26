@@ -1198,7 +1198,7 @@
               day_label: a[1],
               start_time: a[2],
               end_time: a[3],
-              title: a[4],
+              title: (a[4] || "").replace(/🔯/g, "✡️"),
               venue: a[5],
               capacity: +(a[6] || 20),
               participation_fee: +(a[7] || 400),
