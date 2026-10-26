@@ -423,7 +423,11 @@
             body: JSON.stringify(b || {}),
           }),
           j = await r.json();
-        if (!r.ok) throw Error(j.error || "通信エラー");
+        if (!r.ok) {
+          const detail = j && (j.error || j.message || j.details);
+          const message = typeof detail === "string" ? detail : detail ? JSON.stringify(detail) : "通信エラー (HTTP " + r.status + ")";
+          throw Error(message);
+        }
         return j;
       }
       async function loginNow() {
