@@ -546,6 +546,7 @@
                   "人</div><div><b>コメント：</b>" +
                   esc(v.comment || "なし") +
                   "</div>" +
+                  (["pending", "approved"].includes(v.status) && a.event?.event_date >= todayJP() && (a.token || a.lookupAuth) ? '<details><summary class="btn secondary">友人人数を変更</summary><label for="edit-guests-' + esc(v.id) + '">変更後の友人人数（本人を除く合計）</label><input id="edit-guests-' + esc(v.id) + '" type="number" min="0" step="1" inputmode="numeric" value="' + Number(v.guest_count || 0) + '"><p class="muted">招待人数に上限はありません。定員の範囲で追加できます。</p><button type="button" class="btn primary" onclick="updateGuests(&#39;' + esc(v.id) + '&#39;, this)">友人人数を保存</button></details>' : "") +
                   cancelButton +
                   (["pending", "approved"].includes(v.status) && a.event?.event_date <= todayJP() ? '<p class="muted">本人によるキャンセルは前日までです。当日は代表者へ連絡してください。</p>' : "") +
                   "</div>"
@@ -577,6 +578,33 @@
           renderApps();
           message.textContent =
             "確認できませんでした。登録名と申請時のLINE情報をご確認ください。";
+        }
+      }
+
+      async function updateGuests(id, button) {
+        const application = [...apps, ...lookupApps].find((a) => a.visitor?.id === id);
+        if (!application) return;
+        const guest_count = Number(document.getElementById("edit-guests-" + id).value);
+        if (!Number.isSafeInteger(guest_count) || guest_count < 0)
+          return alert("友人人数は0以上の整数で入力してください");
+        button.disabled = true;
+        try {
+          const auth = application.token
+            ? { visitor_token: application.token }
+            : { visitor_id: id, ...application.lookupAuth };
+          await api("visitor-update-guests", { ...auth, guest_count });
+          const lookupAuth = lookupApps.find((a) => a.lookupAuth)?.lookupAuth;
+          if (lookupAuth) {
+            const result = await api("visitor-lookup", lookupAuth);
+            lookupApps = (result.applications || []).map((a) => ({ ...a, lookupAuth }));
+          }
+          await loadApps();
+          await boot();
+          alert("友人人数を変更しました");
+        } catch (e) {
+          alert(e.message);
+        } finally {
+          button.disabled = false;
         }
       }
       async function cancelApp(id) {
@@ -705,7 +733,7 @@
                 e.id +
                 '" value="' +
                 esc(p.display_name || "") +
-                '"></div><div><label>友人の人数</label><select id="guest-count-' + e.id + '"><option value="0">友人なし</option><option value="1">友人1人</option><option value="2">友人2人</option><option value="3">友人3人</option></select></div><div><label>性別</label><select id="gender-' +
+                '"></div><div><label>友人の人数</label><input id="guest-count-' + e.id + '" type="number" min="0" step="1" inputmode="numeric" value="0"><p class="muted">招待人数の上限はありません。申請後も申請状況から人数を変更できます。</p></div><div><label>性別</label><select id="gender-' +
                 e.id +
                 '"><option value="">選択してください</option><option value="男子" ' +
                 (p.gender === "男子" ? "selected" : "") +
@@ -825,7 +853,7 @@
           const ts = getTokens();
           ts.unshift({ token: j.visitor_token, event_id: id });
           saveTokens(ts.slice(0, 50));
-          alert(waitlist ? "キャンセル待ち申請を受け付けました。" : "申請しました。承認結果はこのページで確認できます。");
+          alert(j.visitor?.waitlist ? "キャンセル待ち申請を受け付けました。" : "申請しました。承認結果はこのページで確認できます。");
           await loadApps();
           await boot();
         } catch (e) {
