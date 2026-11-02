@@ -922,7 +922,25 @@
           openSet.add(id);
           await boot();
         } catch (e) {
-          alert(e.message);
+          const capacityError = /定員|枠が不足|残り枠が不足|キャンセル待ちでお申し込み/.test(String(e.message || ""));
+          if (status === "yes" && mine[id]?.status !== "yes" && capacityError) {
+            // The displayed availability can change before the server accepts a request.
+            // Ask before changing the requested status, and keep the entered party size/comment.
+            if (confirm("参加枠が不足しているため、参加登録できませんでした。\nキャンセル待ちに登録しますか？（本人＋友人 " + guest_count + "人）")) {
+              try {
+                await call("respond", { member_token: t, event_id: id, status: "waitlist", comment, guest_count });
+                openSet.add(id);
+                await boot();
+                alert("キャンセル待ちに登録しました。参加確定は代表者からの案内をお待ちください。");
+              } catch (waitError) {
+                alert(waitError.message);
+              }
+            } else {
+              try { await boot(); } catch (refreshError) { alert(refreshError.message); }
+            }
+          } else {
+            alert(e.message);
+          }
         } finally {
           if (status === "yes") {
             pendingYes.delete(id);
