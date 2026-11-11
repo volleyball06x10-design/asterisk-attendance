@@ -653,8 +653,8 @@
                 '</span></div><div class="count">この回の参加確定<b>' +
                 participating +
                 '人</b><span class="muted">正規・友人・承認済ビジター</span></div><div class="count">残り枠<b>' +
-                Math.max(0, Number(e.capacity || 20) - participating - visitorPending) +
-                '人</b><span class="muted">承認待ち '+visitorPending+'人の枠を確保・キャンセル待ちは除外</span></div></div><details class="roster" data-view-key="roster-' + e.id + '" open><summary>申請順一覧（正規 ' + activeRegulars.length + '件・ビジター ' + activeVisitors.length + '件）</summary><div class="roster-body">' + rosterRows + '</div></details>' +
+                Math.max(0, Number(e.capacity || 20) - participating) +
+                '人</b><span class="muted">承認待ち '+visitorPending+'人は申請順に追加・定員には未計上</span></div></div><details class="roster" data-view-key="roster-' + e.id + '" open><summary>申請順一覧（正規 ' + activeRegulars.length + '件・ビジター ' + activeVisitors.length + '件）</summary><div class="roster-body">' + rosterRows + '</div></details>' +
                 (vs.length ? '<details class="event-applications" data-view-key="applications-' + e.id + '"><summary>ビジター申請を管理（承認待ち ' + visitorPending + '人・参加確定 ' + visitorApproved + '人）</summary><div class="application-slot"></div></details>' : '') +
                 '<details class="event-edit" data-view-key="event-edit-' + e.id + '"><summary>日程・定員・参加費を編集</summary><div class="event-form"><label>開催日<input id="d-' +
                 e.id +
